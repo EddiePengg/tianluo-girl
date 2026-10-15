@@ -50,3 +50,33 @@ open -na "Google Chrome" --args --kiosk http://localhost:8000 --autoplay-policy=
 2. 任一台机器：`python3 skills/tianluo-girl/scripts/publish.py card --title "测试" --item "你好" --wait-ack 5` → 大屏显示卡片，终端回 `[ack] displayed`
 3. `python3 skills/tianluo-girl/scripts/publish.py speak "该准备明天的饭啦" --wait-ack 10` → 出声 + `[ack] played`
 4. `python3 skills/tianluo-girl/scripts/scheduler.py --now` → 卡片 + 播报
+
+## 5. Docker / Dokploy 部署（备选）
+
+`web/` 是纯静态站。仓库提供 all-in-one `Dockerfile`：nginx 伺服 + **容器启动时按环境变量生成 `js/config.js`**（配置依然不入仓，改密码只需重启容器）。
+
+```bash
+# 自建镜像
+docker build -t tianluo-web .
+docker run -d -p 8000:80 \
+  -e WS_URL=wss://<部署域名>:8084/mqtt \
+  -e MQTT_USERNAME=tianluo -e MQTT_PASSWORD=tianluo \
+  tianluo-web
+```
+
+**Dokploy 配置清单**：
+- Provider：GitHub → `EddiePengg/tianluo-girl`，branch `main`，Trigger：On Push
+- Build Type：**Dockerfile**（Static 模式零 Docker 也可用——Publish Directory 填 `web`——但 config.js 需另用文件挂载注入，不推荐）
+- Environment 标签页填：
+
+  | 变量 | 值 |
+  |---|---|
+  | `WS_URL` | `wss://<部署域名>:8084/mqtt` |
+  | `MQTT_USERNAME` | 终端用的认证用户（如 `tianluo`） |
+  | `MQTT_PASSWORD` | 对应密码 |
+  | `DEVICE_ID` | `girl-01` |
+
+- Domains 标签页绑域名（如 `tianluo.example.com`）→ Traefik 自动 HTTPS。部署后 Logs 里应出现 `[tianluo] config.js generated`。
+- 工控机 kiosk 直接指向该域名即可，本地 `python3 -m http.server` 可以退休；kiosk 启动参数仍需 `--autoplay-policy=no-user-gesture-required`。
+
+注意：Environment 里的值等同密码，别截图外发。

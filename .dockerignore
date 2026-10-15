@@ -1,0 +1,8 @@
+# 精简镜像：只进 web/；本地真配置与仓库其余部分不进镜像
+.git
+docs
+skills
+.env
+web/js/config.js
+**/.DS_Store
+**/__pycache__
