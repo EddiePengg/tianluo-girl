@@ -1,0 +1,87 @@
+/* 田螺姑娘 kiosk 样式：弱机友好——无渐变动画开销、无图片资源、只用 transform/opacity */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #0d1117; color: #e6edf3;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+.hidden { display: none !important; }
+
+.view {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+/* 连接徽标 */
+.badge {
+  position: absolute; top: 16px; right: 20px; z-index: 90;
+  font-size: 14px; padding: 4px 10px; border-radius: 4px;
+  color: #8b949e; background: #161b22; border: 1px solid #30363d;
+}
+.badge-on  { color: #3fb950; border-color: #238636; }
+.badge-off { color: #f85149; border-color: #da3633; }
+
+/* 待机时钟 */
+#view-clock { gap: 24px; }
+#clock-time { font-size: 200px; font-weight: 700; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+#clock-date { font-size: 34px; color: #8b949e; }
+#clock-hint { font-size: 22px; color: #484f58; }
+
+/* 卡片 */
+#view-card { background: #0d1117; padding: 60px; align-items: flex-start; }
+#view-card.banner {
+  inset: auto 0 0 0; height: 40%;
+  background: #161b22; border-top: 4px solid #1f6feb;
+  padding: 24px 40px; justify-content: flex-start;
+}
+#card-priority { display: none; }
+#view-card.high #card-priority {
+  display: block; font-size: 22px; color: #f85149; margin-bottom: 12px;
+  font-weight: 700;
+}
+#card-title { font-size: 64px; font-weight: 700; margin-bottom: 36px; }
+#view-card.banner #card-title { font-size: 36px; margin-bottom: 16px; }
+#card-items { list-style: none; }
+#card-items li {
+  font-size: 40px; line-height: 1.9; color: #c9d1d9;
+  padding-left: 36px; position: relative;
+}
+#card-items li::before { content: "◆"; position: absolute; left: 0; color: #1f6feb; }
+#view-card.banner #card-items li { font-size: 26px; line-height: 1.7; }
+
+/* 卡片上屏动效（只用 transform/opacity） */
+#view-card:not(.hidden) #card-title,
+#view-card:not(.hidden) #card-items li {
+  animation: rise .25s ease-out both;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* 自定义网页 */
+#view-html iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+
+/* 图片 */
+#view-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* 播报字幕条 */
+#speak-bar {
+  position: absolute; left: 0; right: 0; bottom: 60px; z-index: 80;
+  text-align: center; font-size: 34px; color: #58a6ff;
+  text-shadow: 0 2px 8px #000;
+  animation: rise .2s ease-out both;
+}
+
+/* 聆听提示条 */
+#listen-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 80;
+  text-align: center; font-size: 30px; padding: 20px;
+  background: #161b22; border-top: 3px solid #3fb950;
+  color: #3fb950;
+}
+
+/* 熄屏遮罩 */
+#off-overlay { position: absolute; inset: 0; z-index: 100; background: #000; }

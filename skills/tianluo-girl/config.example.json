@@ -1,0 +1,10 @@
+{
+  "_note": "复制本文件为 config.json 后填写（config.json 已被 gitignore，不会入仓）",
+  "MQTT_HOST": "<部署域名>",
+  "MQTT_PORT": 8883,
+  "MQTT_USERNAME": "",
+  "MQTT_PASSWORD": "",
+  "DEVICE_ID": "girl-01",
+  "TTS_MODEL": "qwen3-tts-flash",
+  "TTS_VOICE": "Cherry"
+}

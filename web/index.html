@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>田螺姑娘</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="status" class="badge badge-off">未连接</div>
+
+  <!-- 待机时钟 -->
+  <div id="view-clock" class="view">
+    <div id="clock-time">--:--</div>
+    <div id="clock-date">----年--月--日 星期-</div>
+    <div id="clock-hint">田螺姑娘待命ing</div>
+  </div>
+
+  <!-- 卡片（fullscreen 或 banner 两种模式） -->
+  <div id="view-card" class="view hidden">
+    <div id="card-priority"></div>
+    <div id="card-title"></div>
+    <ul id="card-items"></ul>
+  </div>
+
+  <!-- 自定义网页 -->
+  <div id="view-html" class="view hidden">
+    <iframe id="html-frame" sandbox="" title="content"></iframe>
+  </div>
+
+  <!-- 图片 -->
+  <div id="view-image" class="view hidden">
+    <img id="image-img" alt="">
+  </div>
+
+  <!-- 播报字幕条 -->
+  <div id="speak-bar" class="hidden"><span id="speak-text"></span></div>
+
+  <!-- 聆听提示条 -->
+  <div id="listen-bar" class="hidden">🎙 我在听，请讲……<span id="listen-count"></span></div>
+
+  <!-- 熄屏遮罩 -->
+  <div id="off-overlay" class="hidden"></div>
+
+  <script src="vendor/mqtt.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

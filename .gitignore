@@ -1,0 +1,10 @@
+# 本地配置与密钥：入仓的是 config.example.* 模板，真配置复制后填写、永不入仓
+.env
+web/js/config.js
+skills/tianluo-girl/config.json
+skills/tianluo-girl/scripts/plans/
+
+# macOS / Python 杂物
+.DS_Store
+__pycache__/
+*.pyc
