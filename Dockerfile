@@ -4,7 +4,9 @@
 #         -e WS_URL=wss://<部署域名>:8084/mqtt \
 #         -e MQTT_USERNAME=tianluo -e MQTT_PASSWORD=tianluo \
 #         tianluo-web
-FROM nginx:alpine
+# 注意：基础镜像走 DaoCloud 镜像站——国内服务器直连 docker.io 会卡死；
+#       如果镜像站失效，改回 FROM nginx:alpine 即可。
+FROM docker.m.daocloud.io/library/nginx:alpine
 
 # nginx 官方镜像的入口会自动执行 /docker-entrypoint.d/*.sh
 COPY docker/gen-config.sh /docker-entrypoint.d/99-tianluo-config.sh
