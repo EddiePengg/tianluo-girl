@@ -65,7 +65,7 @@ Agent 侧配置在 `skills/tianluo-girl/config.json`（与网页端的 `web/js/c
 | `MQTT_USERNAME` / `MQTT_PASSWORD` | 两个认证用户：终端用的填 `config.js`，大脑用的填 `config.json` |
 | `DEVICE_ID` | 终端 ID，默认 `girl-01` |
 | `TTS_MODEL` / `TTS_VOICE` | 百炼 TTS：`qwen3-tts-flash` / `Cherry` |
-| `DASHSCOPE_API_KEY` | 不用写，自动读 `~/.bailian/config.json` |
+| `DASHSCOPE_API_KEY` | 可选：填 config.json、设同名环境变量、或在那台机器 `bl` login（自动落到 `~/.bailian/config.json`），三选一 |
 
 饭食计划在 `skills/tianluo-girl/scripts/plans/*.json`（也不入仓），格式：
 

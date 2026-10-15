@@ -6,5 +6,6 @@
   "MQTT_PASSWORD": "",
   "DEVICE_ID": "girl-01",
   "TTS_MODEL": "qwen3-tts-flash",
-  "TTS_VOICE": "Cherry"
+  "TTS_VOICE": "Cherry",
+  "DASHSCOPE_API_KEY": ""
 }

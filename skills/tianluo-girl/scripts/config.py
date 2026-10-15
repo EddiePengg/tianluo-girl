@@ -30,7 +30,10 @@ def get(key: str, default: str = "") -> str:
 
 
 def dashscope_api_key() -> str:
+    """三处来源，优先级：环境变量 → skill 目录 config.json → ~/.bailian/config.json（bl CLI 登录）。"""
     if key := os.environ.get("DASHSCOPE_API_KEY", ""):
+        return key
+    if key := get("DASHSCOPE_API_KEY"):
         return key
     try:
         data = json.loads(_BAILIAN_CONFIG.read_text(encoding="utf-8"))
