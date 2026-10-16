@@ -26,11 +26,85 @@
     cardUntil: null,      // 当前卡片的过期时间（Date）
     listenTimer: null,
     wakeLock: null,
+    histIdx: -1,          // 正在浏览历史的下标，-1 = 看实时画面
+    liveCmd: null,        // 最近一条实时画面 {type, cmd}（退出历史时还原）
   };
 
   function $(id) { return document.getElementById(id); }
   function genId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+
+  /* ---------- 通知历史（画面存档，左右翻页；声音不存） ---------- */
+
+  var HIST_KEY = "tianluo_history_v1";
+  var HIST_MAX = 50;
+
+  var hist = [];
+  try {
+    var raw = localStorage.getItem(HIST_KEY);
+    if (raw) { hist = JSON.parse(raw); if (!(hist instanceof Array)) hist = []; }
+  } catch (e) { hist = []; }
+
+  function saveHist() {
+    for (;;) {
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(hist)); return; }
+      catch (e) {
+        // 配额超了：丢最旧的再试；只剩一条还存不下就放弃（不崩）
+        if (hist.length > 1) hist.shift(); else return;
+      }
+    }
+  }
+
+  function histPush(type, cmd) {
+    hist.push({ t: Date.now(), type: type, cmd: cmd });
+    while (hist.length > HIST_MAX) hist.shift();
+    saveHist();
+  }
+
+  function fmtTs(t) {
+    var d = new Date(t), p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " +
+      p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+
+  var TYPE_CN = { card: "卡片", html: "网页", image: "图片" };
+
+  function updateHistBar() {
+    var bar = $("hist-bar");
+    if (!hist.length) { bar.classList.add("hidden"); return; }
+    bar.classList.remove("hidden");
+    if (state.histIdx < 0) {
+      $("hist-label").textContent = "‹ 通知历史";
+    } else {
+      var e = hist[state.histIdx];
+      $("hist-label").textContent =
+        fmtTs(e.t) + " " + (TYPE_CN[e.type] || e.type) +
+        "  " + (state.histIdx + 1) + "/" + hist.length + " ›";
+    }
+  }
+
+  function renderEntry(e) {
+    if (e.type === "card") renderCard(e.cmd);
+    else if (e.type === "html") renderHtml(e.cmd);
+    else if (e.type === "image") renderImage(e.cmd);
+  }
+
+  function renderLive() {
+    if (state.liveCmd) renderEntry(state.liveCmd);
+    else setView("clock");
+  }
+
+  function histShow(i) {
+    if (i < 0 || i >= hist.length) {         // 越界 = 回实时画面
+      state.histIdx = -1;
+      renderLive();
+      updateHistBar();
+      return;
+    }
+    state.histIdx = i;
+    renderEntry(hist[i]);
+    updateHistBar();
   }
 
   /* ---------- 视图切换 ---------- */
@@ -90,7 +164,7 @@
 
   /* ---------- 指令处理 ---------- */
 
-  function showCard(cmd) {
+  function renderCard(cmd) {
     var card = $("view-card");
     card.className = "view";                       // 重置模式类
     $("card-title").textContent = cmd.title || "";
@@ -115,10 +189,18 @@
       setView("card");
     }
     state.cardUntil = cmd.display && cmd.display.until ? new Date(cmd.display.until) : null;
+  }
+
+  function showCard(cmd) {
+    state.histIdx = -1;
+    renderCard(cmd);
+    state.liveCmd = { type: "card", cmd: cmd };
+    histPush("card", cmd);
+    updateHistBar();
     ack(cmd, "displayed");
   }
 
-  function showHtml(cmd) {
+  function renderHtml(cmd) {
     const frame = $("html-frame");
     // 强制重绘：清空 → 强制重排 → 下一帧再赋值，
     // 修复 kiosk 上间歇性白屏（srcdoc 在旧视图状态下偶发不重画）
@@ -131,13 +213,29 @@
       frame.srcdoc = html;
     }
     setView("html");
+  }
+
+  function showHtml(cmd) {
+    state.histIdx = -1;
+    renderHtml(cmd);
+    state.liveCmd = { type: "html", cmd: cmd };
+    histPush("html", cmd);
+    updateHistBar();
     ack(cmd, "displayed");
   }
 
-  function showImage(cmd) {
+  function renderImage(cmd) {
     $("image-img").src = "data:image/" + (cmd.format || "jpeg") +
       ";base64," + cmd.image_b64;
     setView("image");
+  }
+
+  function showImage(cmd) {
+    state.histIdx = -1;
+    renderImage(cmd);
+    state.liveCmd = { type: "image", cmd: cmd };
+    histPush("image", cmd);
+    updateHistBar();
     ack(cmd, "displayed");
   }
 
@@ -268,6 +366,8 @@
     clearInterval(state.listenTimer);
     $("off-overlay").classList.add("hidden");
     state.cardUntil = null;
+    state.histIdx = -1;
+    state.liveCmd = null;
     setView("clock");
     if (cmd) ack(cmd, "displayed");
   }
@@ -344,6 +444,25 @@
 
   tickClock();
   setInterval(tickClock, 1000);
+  updateHistBar();
+  // 翻页：‹=往更旧的一条，›=往更新的一条（越界即回到实时画面）
+  $("hist-prev").addEventListener("click", function () {
+    histShow(state.histIdx < 0 ? hist.length - 1 : state.histIdx - 1);
+  });
+  $("hist-next").addEventListener("click", function () {
+    histShow(state.histIdx + 1);
+  });
+  // 横向滑动翻页（触屏）
+  var sx = null;
+  window.addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; }, { passive: true });
+  window.addEventListener("touchend", function (e) {
+    if (sx === null) return;
+    var dx = e.changedTouches[0].clientX - sx; sx = null;
+    if (Math.abs(dx) < 60) return;                       // 太短不算
+    if (state.histIdx < 0 && dx > 0) return;             // 实时画面时右滑不动作（新内容优先）
+    histShow(dx < 0 ? (state.histIdx < 0 ? hist.length - 1 : state.histIdx - 1)
+                    : state.histIdx + 1);
+  }, { passive: true });
   window.addEventListener("beforeunload", function () {
     publishStatus("offline");
   });

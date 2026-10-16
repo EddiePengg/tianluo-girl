@@ -57,6 +57,34 @@ python3 $SKILL/scripts/subscribe.py
 Agent 侧配置在 `skills/tianluo-girl/config.json`（与网页端的 `web/js/config.js` 对称，
 一处一个明文配置文件，均不入仓——仓库里只有 `config.example.*` 模板，首次使用复制后填写）。
 
+## 能做什么（终端已实现的能力）
+
+| 指令 | 说明 |
+|---|---|
+| `card` | 全屏卡片（`fullscreen`）或底部横幅（`banner`），支持 `priority=high` 红色强调、`until` 过期自动回时钟 |
+| `html` | 全屏自定义网页（菜单/海报/报告，整段 HTML 直接上屏） |
+| `image` | 图片（base64 内嵌，jpeg/png） |
+| `speak` | TTS 语音播报，带底部字幕条；`interrupt=true` 可打断上一条 |
+| `sound` | 提示音 `chime`（叮咚）/ `ding`（叮） |
+| `volume` / `screen` / `clear` | 音量 0–100 / 熄屏·常亮 / 回待机时钟 |
+| `listen` | 对话回合交接提示条（麦克风在听 + 倒计时） |
+| **通知历史** | 卡片/网页/图片自动存档（本地 localStorage，最近 50 条），屏底 `‹ ›` 按钮或**左右滑动**翻页，横滑回来=实时画面 |
+
+边界（明确不做的）：
+- `slideshow` / `light` → 三期实现，当前回 `failed`
+- **声音不入历史**（存了会出现"翻页自己说话"），历史只存画面
+- 网页端是哑显示端，除历史翻页外没有别的按钮
+
+## 常见问题排障
+
+| 症状 | 原因与解法 |
+|---|---|
+| 卡片有、语音/音效没有 | kiosk 没带 `--autoplay-policy=no-user-gesture-required`（见 `docs/deploy.md` §3），或浏览器页面刷新后失去自动播放授权——重启 kiosk 或点一下屏幕 |
+| 音效 `played` 但听不到 | 音响物理音量旋钮被调小；`publish.py volume 100` 拉软件音量，再查硬件 |
+| 网页/海报白屏 | ① 页面先刷新（刷新后 srcdoc 必渲染）② `showHtml` 已做"清空→重排→下一帧赋值"强制重绘 ③ HTML 必须自带 `html,body{height:100%}`，否则只有内容那么高、底下一片白 |
+| 竖屏内容被截断 | 一屏放下、禁止滚动：字号用 `clamp()` 按视口缩放（`daily-meal-plan` skill 有具体档位），`overflow:hidden` |
+| 显示 `offline` | 先查工控机网络；retained 消息会保留最后一次状态，不代表现在还离线 |
+
 ## 配置（本地文件，不入仓）
 
 | 键 | 说明 |

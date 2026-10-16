@@ -85,3 +85,18 @@ html, body {
 
 /* 熄屏遮罩 */
 #off-overlay { position: absolute; inset: 0; z-index: 100; background: #000; }
+
+/* 通知历史翻页条 */
+#hist-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 85;
+  display: flex; align-items: center; justify-content: center; gap: 28px;
+  padding: 10px 0 14px; background: rgba(22,27,34,.92);
+  border-top: 1px solid #30363d;
+}
+#hist-bar button {
+  width: 88px; height: 64px; font-size: 40px; line-height: 1;
+  color: #58a6ff; background: #21262d; border: 1px solid #30363d;
+  border-radius: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+#hist-bar button:active { background: #30363d; }
+#hist-label { font-size: 26px; color: #8b949e; min-width: 320px; text-align: center; font-variant-numeric: tabular-nums; }
