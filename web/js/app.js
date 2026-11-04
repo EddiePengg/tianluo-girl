@@ -201,17 +201,14 @@
   }
 
   function renderHtml(cmd) {
-    const frame = $("html-frame");
-    // 强制重绘：清空 → 强制重排 → 下一帧再赋值，
-    // 修复 kiosk 上间歇性白屏（srcdoc 在旧视图状态下偶发不重画）
-    frame.srcdoc = "";
-    void frame.offsetHeight;
-    const html = cmd.html || "";
-    if (window.requestAnimationFrame) {
-      requestAnimationFrame(() => { frame.srcdoc = html; });
-    } else {
-      frame.srcdoc = html;
-    }
+    // Chrome 对 display:none 的 iframe 重新赋值 srcdoc 可能白屏，重建 iframe 规避
+    var old = $("html-frame");
+    var frame = document.createElement("iframe");
+    frame.id = "html-frame";
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("title", "content");
+    frame.srcdoc = cmd.html || "";
+    old.parentNode.replaceChild(frame, old);
     setView("html");
   }
 
@@ -466,5 +463,15 @@
   window.addEventListener("beforeunload", function () {
     publishStatus("offline");
   });
+
+  // 键盘左右键与 ‹ › 按钮同逻辑
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft") {
+      histShow(state.histIdx < 0 ? hist.length - 1 : state.histIdx - 1);
+    } else if (e.key === "ArrowRight") {
+      histShow(state.histIdx + 1);
+    }
+  });
+
   connect();
 })();
