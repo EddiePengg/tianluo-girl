@@ -205,7 +205,7 @@
     var old = $("html-frame");
     var frame = document.createElement("iframe");
     frame.id = "html-frame";
-    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("sandbox", "allow-scripts allow-same-origin");
     frame.setAttribute("title", "content");
     frame.srcdoc = cmd.html || "";
     old.parentNode.replaceChild(frame, old);
