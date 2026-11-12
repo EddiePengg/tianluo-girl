@@ -62,16 +62,17 @@
 
   // 强制重绘：清空 → 强制重排 → 下一帧再赋值，
   // 修复 kiosk 上间歇性白屏（srcdoc 在旧视图状态下偶发不重画）
+  // 注意：srcdoc 属性（哪怕空串）优先级高于 src，url 类型必须 removeAttribute("srcdoc")
   function loadSlotContent(s) {
     var el = slotEls[s.id];
     if (!el) return;
     var frame = el.frame;
-    frame.srcdoc = "";
+    frame.removeAttribute("srcdoc");
     frame.removeAttribute("src");
     void frame.offsetHeight;
     var apply = function () {
       if (s.kind === "url") {
-        frame.srcdoc = "";
+        frame.removeAttribute("srcdoc");
         frame.src = s.url;
       } else {
         frame.removeAttribute("src");
