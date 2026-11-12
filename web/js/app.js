@@ -30,6 +30,7 @@
     slots: [],            // 常驻页签 [{id,label,icon,kind,url,html}]
     activeSlot: -1,       // 当前激活槽下标，-1 = 无激活（看时钟/临时层）
     temp: null,           // 临时全屏层 {type:"card"|"html"|"image"}，banner 卡片不算
+    tempUntil: null,      // 临时层到期时间戳（cmd.ttl 秒；null=不自动关）
   };
 
   var slotEls = {};       // slot id -> {wrap, frame}
@@ -219,6 +220,7 @@
     }
     // name === "slot" 时所有 BASE_VIEWS 隐藏，显隐由 renderSlots 裁决
     publishStatus("online");
+    updateTempClose();
   }
 
   /* ---------- 状态 ---------- */
@@ -324,6 +326,7 @@
       setView("card");
     }
     state.cardUntil = cmd.display && cmd.display.until ? new Date(cmd.display.until) : null;
+    state.tempUntil = null;                        // card 走 cardUntil，不走 tempUntil
     renderSlots();
     ack(cmd, "displayed");
   }
@@ -342,8 +345,10 @@
   }
 
   // 兼容旧协议：html 指令 = 临时全屏层（常驻页面请用 slot）
+  // cmd.ttl（秒）到期自动回槽；右上角 X 可手动关闭
   function showHtml(cmd) {
     state.temp = { type: "html" };
+    state.tempUntil = cmd.ttl ? Date.now() + cmd.ttl * 1000 : null;
     renderHtml(cmd);
     setView("html");
     renderSlots();
@@ -355,9 +360,10 @@
       ";base64," + cmd.image_b64;
   }
 
-  // 临时全屏图片：盖住槽，切槽/clear 后回槽
+  // 临时全屏图片：盖住槽，切槽/clear/ttl 到期后回槽
   function showImage(cmd) {
     state.temp = { type: "image" };
+    state.tempUntil = cmd.ttl ? Date.now() + cmd.ttl * 1000 : null;
     renderImage(cmd);
     setView("image");
     renderSlots();
@@ -535,18 +541,34 @@
     }
   }
 
-  /* ---------- 过期卡片巡检 ---------- */
+  /* ---------- 过期巡检（卡片 display.until / 临时层 ttl） ---------- */
 
   setInterval(function () {
-    if (state.cardUntil && new Date() > state.cardUntil) {
+    var expired = (state.cardUntil && new Date() > state.cardUntil) ||
+                  (state.tempUntil && Date.now() > state.tempUntil);
+    if (expired) {
       state.cardUntil = null;
-      if (state.temp && state.temp.type === "card") {
-        state.temp = null;                          // 到期回槽（无槽回时钟）
-      }
+      state.tempUntil = null;
+      if (state.temp) state.temp = null;            // 到期回槽（无槽回时钟）
       setView(state.activeSlot >= 0 ? "slot" : "clock");
       renderSlots();
     }
   }, 1000);
+
+  /* ---------- 临时层手动关闭（右上角 X） ---------- */
+
+  function closeTemp() {
+    state.temp = null;
+    state.tempUntil = null;
+    state.cardUntil = null;
+    setView(state.activeSlot >= 0 ? "slot" : "clock");
+    renderSlots();
+  }
+
+  function updateTempClose() {
+    var show = !!state.temp && (state.view === "html" || state.view === "image" || state.view === "card");
+    $("temp-close").classList.toggle("hidden", !show);
+  }
 
   /* ---------- MQTT 连接 ---------- */
 
@@ -591,6 +613,7 @@
   setInterval(tickClock, 1000);
   renderSlots();
   loadSlots();   // 恢复持久化的页签（刷新/重启后还在）
+  $("temp-close").addEventListener("click", closeTemp);   // 临时层右上角 X
   window.addEventListener("beforeunload", function () {
     publishStatus("offline");
   });

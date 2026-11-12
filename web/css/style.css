@@ -113,4 +113,16 @@ html, body {
 /* 熄屏遮罩 */
 #off-overlay { position: absolute; inset: 0; z-index: 100; background: #000; }
 
-/* （通知历史翻页条已移除，由左侧页签栏替代） */
+/* 临时层关闭按钮（右上角 X，触屏友好） */
+.temp-close {
+  position: fixed; top: 18px; right: 18px; z-index: 60;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12); color: #e6edf3;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  font-size: 36px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.temp-close:active { background: rgba(255, 255, 255, 0.28); }
+
+/* 通知历史翻页条已移除，由左侧页签栏替代 */

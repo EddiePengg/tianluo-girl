@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>田螺姑娘</title>
-<link rel="stylesheet" href="css/style.css?v=20261112c">
+<link rel="stylesheet" href="css/style.css?v=20261112d">
 </head>
 <body>
   <div id="status" class="badge badge-off">未连接</div>
@@ -27,6 +27,9 @@
   <div id="view-html" class="view hidden">
     <iframe id="html-frame" sandbox="allow-scripts allow-same-origin" title="content"></iframe>
   </div>
+
+  <!-- 临时层关闭按钮（右上角 X，触屏友好） -->
+  <button id="temp-close" class="temp-close hidden" aria-label="关闭">×</button>
 
   <!-- 常驻页签 iframe 容器（slot 指令动态创建，各槽独立保活） -->
   <div id="slot-frames"></div>
@@ -52,6 +55,6 @@
 
   <script src="vendor/mqtt.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/app.js?v=20261112c"></script>
+  <script src="js/app.js?v=20261112d"></script>
 </body>
 </html>

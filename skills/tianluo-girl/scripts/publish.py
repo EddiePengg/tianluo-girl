@@ -107,11 +107,13 @@ def main() -> None:
     h.add_argument("--html", default=None)
     h.add_argument("--file", default=None, help="HTML 文件路径")
     h.add_argument("--until", default=None)
+    h.add_argument("--ttl", type=int, default=None, help="多少秒后自动关闭（临时层）")
 
     i = sub.add_parser("image", parents=[common], help="显示图片")
     i.add_argument("--file", required=True)
     i.add_argument("--format", default=None, help="jpeg/png（默认按扩展名）")
     i.add_argument("--until", default=None)
+    i.add_argument("--ttl", type=int, default=None, help="多少秒后自动关闭（临时层）")
 
     so = sub.add_parser("sound", parents=[common], help="播提示音")
     so.add_argument("--name", choices=["ding", "chime"], default="ding")
@@ -170,7 +172,9 @@ def main() -> None:
         if not html:
             raise SystemExit("html: 需要 --html 或 --file")
         msg = envelope("html", html=html)
-        if until := parse_until(a.until):
+        if a.ttl:
+            msg["ttl"] = a.ttl
+        elif until := parse_until(a.until):
             msg["display"] = {"until": until}
     elif a.cmd == "image":
         data = read_file(a.file)
@@ -178,7 +182,9 @@ def main() -> None:
             raise SystemExit(f"图片过大：{len(data)} bytes（base64 后须 ≤1MB）")
         msg = envelope("image", image_b64=base64.b64encode(data).decode(),
                        format=a.format or guess_format(a.file, "jpeg"))
-        if until := parse_until(a.until):
+        if a.ttl:
+            msg["ttl"] = a.ttl
+        elif until := parse_until(a.until):
             msg["display"] = {"until": until}
     elif a.cmd == "sound":
         msg = envelope("sound", name=a.name)
