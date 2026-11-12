@@ -130,6 +130,7 @@
       var s = state.slots[idx];
       publishEvt({ type: "slot", action: "activate", id: s.id, label: s.label });
     }
+    saveSlots();   // 激活态持久化，刷新后回到最后看的页签
   }
 
   function setSlot(cmd) {
@@ -165,6 +166,7 @@
     state.view = "slot";
     setView("slot");
     renderSlots();
+    saveSlots();
     ack(cmd, "displayed");
   }
 
@@ -181,6 +183,7 @@
       }
       setView(state.activeSlot >= 0 ? "slot" : "clock");
       renderSlots();
+      saveSlots();
     }
     ack(cmd, "displayed");
   }
@@ -193,6 +196,7 @@
     state.cardUntil = null;
     setView("clock");
     renderSlots();
+    saveSlots();
     if (cmd) ack(cmd, "displayed");
   }
 
@@ -235,6 +239,38 @@
 
   function ack(cmd, result) {
     publishEvt({ type: "ack", cmd_id: cmd.id, action: cmd.type, result: result });
+  }
+
+  /* ---------- 页签持久化（localStorage，刷新/重启后恢复） ---------- */
+
+  function saveSlots() {
+    try {
+      localStorage.setItem("tianluo_slots", JSON.stringify(state.slots));
+      localStorage.setItem("tianluo_active_slot",
+        state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : "");
+    } catch (e) { console.warn("[persist] 保存失败", e); }
+  }
+
+  function loadSlots() {
+    try {
+      var raw = localStorage.getItem("tianluo_slots");
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return;
+      arr.forEach(function (s) {
+        if (s && s.id && s.kind) setSlot({
+          slot_id: s.id, label: s.label, icon: s.icon,
+          kind: s.kind, url: s.url, html: s.html
+        });   // setSlot 内会 saveSlots，幂等无害
+      });
+      var act = localStorage.getItem("tianluo_active_slot");
+      if (act && slotIndexById(act) >= 0) activateSlot(slotIndexById(act));
+      if (state.slots.length) {
+        renderSlots();
+        setView(state.activeSlot >= 0 ? "slot" : "clock");
+      }
+      console.log("[persist] 恢复页签", state.slots.length, "个");
+    } catch (e) { console.warn("[persist] 恢复失败", e); }
   }
 
   /* ---------- 时钟 ---------- */
@@ -553,6 +589,7 @@
   tickClock();
   setInterval(tickClock, 1000);
   renderSlots();
+  loadSlots();   // 恢复持久化的页签（刷新/重启后还在）
   window.addEventListener("beforeunload", function () {
     publishStatus("offline");
   });
