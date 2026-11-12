@@ -113,9 +113,9 @@ html, body {
 /* 熄屏遮罩 */
 #off-overlay { position: absolute; inset: 0; z-index: 100; background: #000; }
 
-/* 临时层关闭按钮（右上角 X，触屏友好） */
+/* 临时层关闭按钮（右上角 X，触屏友好；z-index 须高于 .badge 90） */
 .temp-close {
-  position: fixed; top: 18px; right: 18px; z-index: 60;
+  position: fixed; top: 18px; right: 18px; z-index: 95;
   width: 64px; height: 64px; border-radius: 50%;
   background: rgba(255, 255, 255, 0.12); color: #e6edf3;
   border: 2px solid rgba(255, 255, 255, 0.25);
