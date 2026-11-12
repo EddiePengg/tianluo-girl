@@ -23,21 +23,22 @@
     <ul id="card-items"></ul>
   </div>
 
-  <!-- 自定义网页 -->
+  <!-- 自定义网页（临时全屏层，兼容旧 html 指令；常驻页面请用 slot） -->
   <div id="view-html" class="view hidden">
     <iframe id="html-frame" sandbox="allow-scripts allow-same-origin" title="content"></iframe>
   </div>
+
+  <!-- 常驻页签 iframe 容器（slot 指令动态创建，各槽独立保活） -->
+  <div id="slot-frames"></div>
 
   <!-- 图片 -->
   <div id="view-image" class="view hidden">
     <img id="image-img" alt="">
   </div>
 
-  <!-- 通知历史翻页条（左右箭头；只存画面不存声音） -->
-  <div id="hist-bar" class="hidden">
-    <button id="hist-prev" type="button">‹</button>
-    <span id="hist-label">‹ 通知历史</span>
-    <button id="hist-next" type="button">›</button>
+  <!-- 左侧页签栏（点按切换常驻槽） -->
+  <div id="slot-bar" class="hidden">
+    <div id="slot-list"></div>
   </div>
 
   <!-- 播报字幕条 -->

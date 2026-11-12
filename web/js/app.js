@@ -1,4 +1,5 @@
 /* 田螺姑娘终端：哑显示端。只负责忠实执行 cmd、上报 evt，一切决策在大脑。
+ * 常驻页签系统（2026-11-12）：左侧竖排页签，多 iframe 独立保活，点按切换。
  * 弱机友好：无框架、少 DOM 更新、音频用原生 HTMLAudio。协议见 skills/tianluo-girl/reference/messages.md。
  */
 (function () {
@@ -19,112 +20,199 @@
   };
 
   var state = {
-    view: "clock",        // clock | card | html | image | speak | off
+    view: "clock",        // clock | card | html | image | speak | off | slot
     volume: 1.0,
     player: null,         // 正在播放的 Audio
     speakCmd: null,       // 正在播放的 speak cmd（打断时回 failed）
     cardUntil: null,      // 当前卡片的过期时间（Date）
     listenTimer: null,
     wakeLock: null,
-    histIdx: -1,          // 正在浏览历史的下标，-1 = 看实时画面
-    liveCmd: null,        // 最近一条实时画面 {type, cmd}（退出历史时还原）
+    slots: [],            // 常驻页签 [{id,label,icon,kind,url,html}]
+    activeSlot: -1,       // 当前激活槽下标，-1 = 无激活（看时钟/临时层）
+    temp: null,           // 临时全屏层 {type:"card"|"html"|"image"}，banner 卡片不算
   };
+
+  var slotEls = {};       // slot id -> {wrap, frame}
 
   function $(id) { return document.getElementById(id); }
   function genId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   }
 
-  /* ---------- 通知历史（画面存档，左右翻页；声音不存） ---------- */
+  /* ---------- 常驻页签系统 ---------- */
 
-  var HIST_KEY = "tianluo_history_v1";
-  var HIST_MAX = 50;
+  function slotIndexById(id) {
+    for (var i = 0; i < state.slots.length; i++) {
+      if (state.slots[i].id === id) return i;
+    }
+    return -1;
+  }
 
-  var hist = [];
-  try {
-    var raw = localStorage.getItem(HIST_KEY);
-    if (raw) { hist = JSON.parse(raw); if (!(hist instanceof Array)) hist = []; }
-  } catch (e) { hist = []; }
+  function ensureSlotEl(s) {
+    if (slotEls[s.id]) return;
+    var wrap = document.createElement("div");
+    wrap.className = "slot-frame hidden";
+    var frame = document.createElement("iframe");
+    frame.setAttribute("sandbox", "allow-scripts allow-same-origin");
+    frame.setAttribute("title", s.label || s.id);
+    wrap.appendChild(frame);
+    $("slot-frames").appendChild(wrap);
+    slotEls[s.id] = { wrap: wrap, frame: frame };
+  }
 
-  function saveHist() {
-    for (;;) {
-      try { localStorage.setItem(HIST_KEY, JSON.stringify(hist)); return; }
-      catch (e) {
-        // 配额超了：丢最旧的再试；只剩一条还存不下就放弃（不崩）
-        if (hist.length > 1) hist.shift(); else return;
+  // 强制重绘：清空 → 强制重排 → 下一帧再赋值，
+  // 修复 kiosk 上间歇性白屏（srcdoc 在旧视图状态下偶发不重画）
+  function loadSlotContent(s) {
+    var el = slotEls[s.id];
+    if (!el) return;
+    var frame = el.frame;
+    frame.srcdoc = "";
+    frame.removeAttribute("src");
+    void frame.offsetHeight;
+    var apply = function () {
+      if (s.kind === "url") {
+        frame.srcdoc = "";
+        frame.src = s.url;
+      } else {
+        frame.removeAttribute("src");
+        frame.srcdoc = s.html || "";
       }
-    }
+    };
+    if (window.requestAnimationFrame) requestAnimationFrame(apply);
+    else apply();
   }
 
-  function histPush(type, cmd) {
-    hist.push({ t: Date.now(), type: type, cmd: cmd });
-    while (hist.length > HIST_MAX) hist.shift();
-    saveHist();
+  function removeSlotEl(id) {
+    var el = slotEls[id];
+    if (!el) return;
+    if (el.wrap.parentNode) el.wrap.parentNode.removeChild(el.wrap);
+    delete slotEls[id];
   }
 
-  function fmtTs(t) {
-    var d = new Date(t), p = function (n) { return (n < 10 ? "0" : "") + n; };
-    return p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " +
-      p(d.getHours()) + ":" + p(d.getMinutes());
-  }
-
-  var TYPE_CN = { card: "卡片", html: "网页", image: "图片" };
-
-  function updateHistBar() {
-    var bar = $("hist-bar");
-    if (!hist.length) { bar.classList.add("hidden"); return; }
-    bar.classList.remove("hidden");
-    if (state.histIdx < 0) {
-      $("hist-label").textContent = "‹ 通知历史";
+  // 统一裁决：左侧按钮渲染 + iframe 显隐 + 时钟显隐
+  function renderSlots() {
+    var bar = $("slot-bar");
+    var list = $("slot-list");
+    list.innerHTML = "";
+    if (!state.slots.length) {
+      bar.classList.add("hidden");
     } else {
-      var e = hist[state.histIdx];
-      $("hist-label").textContent =
-        fmtTs(e.t) + " " + (TYPE_CN[e.type] || e.type) +
-        "  " + (state.histIdx + 1) + "/" + hist.length + " ›";
+      bar.classList.remove("hidden");
+      state.slots.forEach(function (s, i) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "slot-btn" + (i === state.activeSlot && !state.temp ? " active" : "");
+        b.innerHTML = "<span class=\"slot-icon\">" + (s.icon || "📄") +
+                      "</span><span class=\"slot-label\">" + (s.label || s.id) + "</span>";
+        b.addEventListener("click", function () { activateSlot(i, true); });
+        list.appendChild(b);
+      });
+    }
+    Object.keys(slotEls).forEach(function (id) {
+      var idx = slotIndexById(id);
+      var show = idx >= 0 && idx === state.activeSlot && !state.temp;
+      slotEls[id].wrap.classList.toggle("hidden", !show);
+    });
+    // 时钟只在：无临时层 && 无激活槽 时显示
+    var showClock = !state.temp && state.activeSlot < 0;
+    $("view-clock").classList.toggle("hidden", !showClock);
+  }
+
+  function activateSlot(idx, byUser) {
+    if (idx < 0 || idx >= state.slots.length) return;
+    state.activeSlot = idx;
+    state.temp = null;         // 切页签时清掉临时全屏层
+    state.cardUntil = null;
+    state.view = "slot";
+    setView("slot");
+    renderSlots();
+    if (byUser) {
+      var s = state.slots[idx];
+      publishEvt({ type: "slot", action: "activate", id: s.id, label: s.label });
     }
   }
 
-  function renderEntry(e) {
-    if (e.type === "card") renderCard(e.cmd);
-    else if (e.type === "html") renderHtml(e.cmd);
-    else if (e.type === "image") renderImage(e.cmd);
-  }
-
-  function renderLive() {
-    if (state.liveCmd) renderEntry(state.liveCmd);
-    else setView("clock");
-  }
-
-  function histShow(i) {
-    if (i < 0 || i >= hist.length) {         // 越界 = 回实时画面
-      state.histIdx = -1;
-      renderLive();
-      updateHistBar();
-      return;
+  function setSlot(cmd) {
+    if (!cmd.slot_id) { ack(cmd, "failed"); return; }
+    var idx = slotIndexById(cmd.slot_id);
+    var slot = {
+      id: cmd.slot_id,
+      label: cmd.label || cmd.slot_id,
+      icon: cmd.icon || "📄",
+      kind: cmd.kind === "url" ? "url" : "html",
+      url: cmd.url || "",
+      html: cmd.html || "",
+    };
+    if (idx < 0) {
+      state.slots.push(slot);
+      ensureSlotEl(slot);
+      loadSlotContent(slot);
+      // 首个槽自动激活；显式 activate=true 也激活
+      if (cmd.activate || state.activeSlot < 0) {
+        state.activeSlot = state.slots.length - 1;
+        state.view = "slot";
+      }
+    } else {
+      var old = state.slots[idx];
+      var contentChanged = old.kind !== slot.kind ||
+        (slot.kind === "url" ? old.url !== slot.url : old.html !== slot.html);
+      state.slots[idx] = slot;
+      ensureSlotEl(slot);
+      if (contentChanged) loadSlotContent(slot);
+      if (cmd.activate) state.activeSlot = idx;
     }
-    state.histIdx = i;
-    renderEntry(hist[i]);
-    updateHistBar();
+    if (cmd.activate) state.temp = null;
+    state.view = "slot";
+    setView("slot");
+    renderSlots();
+    ack(cmd, "displayed");
+  }
+
+  function removeSlot(cmd) {
+    var idx = slotIndexById(cmd.slot_id);
+    if (idx >= 0) {
+      state.slots.splice(idx, 1);
+      removeSlotEl(cmd.slot_id);
+      if (state.activeSlot === idx) {
+        state.activeSlot = state.slots.length ? 0 : -1;
+        state.temp = null;
+      } else if (state.activeSlot > idx) {
+        state.activeSlot--;
+      }
+      setView(state.activeSlot >= 0 ? "slot" : "clock");
+      renderSlots();
+    }
+    ack(cmd, "displayed");
+  }
+
+  function clearSlots(cmd) {
+    state.slots = [];
+    Object.keys(slotEls).forEach(removeSlotEl);
+    state.activeSlot = -1;
+    state.temp = null;
+    state.cardUntil = null;
+    setView("clock");
+    renderSlots();
+    if (cmd) ack(cmd, "displayed");
   }
 
   /* ---------- 视图切换 ---------- */
 
-  var VIEWS = ["view-clock", "view-card", "view-html", "view-image"];
+  var BASE_VIEWS = ["view-clock", "view-card", "view-html", "view-image"];
 
   function setView(name, opts) {
     opts = opts || {};
-    VIEWS.forEach(function (v) { $(v).classList.add("hidden"); });
+    BASE_VIEWS.forEach(function (v) { $(v).classList.add("hidden"); });
     $("speak-bar").classList.add("hidden");
     $("listen-bar").classList.add("hidden");
     state.view = name;
 
     if (name === "card" && opts.mode === "banner") {
-      $("view-card").classList.remove("hidden");
-    } else if (VIEWS.indexOf("view-" + name) >= 0) {
+      $("view-card").classList.remove("hidden");   // banner：时钟由 renderSlots 保留
+    } else if (BASE_VIEWS.indexOf("view-" + name) >= 0) {
       $("view-" + name).classList.remove("hidden");
-    } else if (name === "clock") {
-      $("view-clock").classList.remove("hidden");
     }
+    // name === "slot" 时所有 BASE_VIEWS 隐藏，显隐由 renderSlots 裁决
     publishStatus("online");
   }
 
@@ -182,59 +270,64 @@
     var mode = (cmd.display && cmd.display.mode) || "fullscreen";
     if (mode === "banner") {
       card.classList.add("banner");
-      $("view-clock").classList.remove("hidden");  // banner 模式时钟保留
-      state.view = "card";
-      publishStatus("online");
     } else {
+      card.classList.remove("banner");
+    }
+  }
+
+  // 临时 fullscreen 卡片：盖住槽，until 到期或切槽/clear 后回槽
+  function showCard(cmd) {
+    var mode = (cmd.display && cmd.display.mode) || "fullscreen";
+    renderCard(cmd);
+    if (mode === "banner") {
+      state.temp = null;                           // banner 与槽共存
+      setView("card", { mode: "banner" });
+    } else {
+      state.temp = { type: "card" };
       setView("card");
     }
     state.cardUntil = cmd.display && cmd.display.until ? new Date(cmd.display.until) : null;
-  }
-
-  function showCard(cmd) {
-    state.histIdx = -1;
-    renderCard(cmd);
-    state.liveCmd = { type: "card", cmd: cmd };
-    histPush("card", cmd);
-    updateHistBar();
+    renderSlots();
     ack(cmd, "displayed");
   }
 
   function renderHtml(cmd) {
-    // Chrome 对 display:none 的 iframe 重新赋值 srcdoc 可能白屏，重建 iframe 规避
-    var old = $("html-frame");
-    var frame = document.createElement("iframe");
-    frame.id = "html-frame";
-    frame.setAttribute("sandbox", "allow-scripts allow-same-origin");
-    frame.setAttribute("title", "content");
-    frame.srcdoc = cmd.html || "";
-    old.parentNode.replaceChild(frame, old);
-    setView("html");
+    const frame = $("html-frame");
+    // 强制重绘（同上，防 kiosk 白屏）
+    frame.srcdoc = "";
+    void frame.offsetHeight;
+    const html = cmd.html || "";
+    if (window.requestAnimationFrame) {
+      requestAnimationFrame(() => { frame.srcdoc = html; });
+    } else {
+      frame.srcdoc = html;
+    }
   }
 
+  // 兼容旧协议：html 指令 = 临时全屏层（常驻页面请用 slot）
   function showHtml(cmd) {
-    state.histIdx = -1;
+    state.temp = { type: "html" };
     renderHtml(cmd);
-    state.liveCmd = { type: "html", cmd: cmd };
-    histPush("html", cmd);
-    updateHistBar();
+    setView("html");
+    renderSlots();
     ack(cmd, "displayed");
   }
 
   function renderImage(cmd) {
     $("image-img").src = "data:image/" + (cmd.format || "jpeg") +
       ";base64," + cmd.image_b64;
-    setView("image");
   }
 
+  // 临时全屏图片：盖住槽，切槽/clear 后回槽
   function showImage(cmd) {
-    state.histIdx = -1;
+    state.temp = { type: "image" };
     renderImage(cmd);
-    state.liveCmd = { type: "image", cmd: cmd };
-    histPush("image", cmd);
-    updateHistBar();
+    setView("image");
+    renderSlots();
     ack(cmd, "displayed");
   }
+
+  /* ---------- 音频 ---------- */
 
   function b64ToBlob(b64, mime) {
     var bin = atob(b64);
@@ -270,13 +363,12 @@
 
       if (cmd.text) {
         $("speak-text").textContent = "🔊 " + cmd.text;
-        $("speak-bar").classList.remove("hidden");
+        $("speak-bar").classList.remove("hidden");   // 字幕条不打断当前槽
       }
       audio.onended = function () {
         state.player = null; state.speakCmd = null;
         $("speak-bar").classList.add("hidden");
         ack(cmd, "played");
-        if (state.view === "speak") setView("clock");
       };
       audio.onerror = function () {
         state.player = null; state.speakCmd = null;
@@ -347,7 +439,10 @@
       state.view = "off";
     } else {
       $("off-overlay").classList.add("hidden");
-      if (state.view === "off") setView("clock");
+      if (state.view === "off") {
+        setView(state.activeSlot >= 0 ? "slot" : "clock");
+        renderSlots();
+      }
       if (cmd.state === "keep_awake" && navigator.wakeLock) {
         navigator.wakeLock.request("screen").then(function (lock) {
           state.wakeLock = lock;
@@ -358,14 +453,15 @@
     ack(cmd, "displayed");
   }
 
+  // 清除：停播 + 清临时层，回当前激活槽（无槽回时钟）；不动常驻槽
   function doClear(cmd) {
     stopPlaying(null);
     clearInterval(state.listenTimer);
     $("off-overlay").classList.add("hidden");
     state.cardUntil = null;
-    state.histIdx = -1;
-    state.liveCmd = null;
-    setView("clock");
+    state.temp = null;
+    setView(state.activeSlot >= 0 ? "slot" : "clock");
+    renderSlots();
     if (cmd) ack(cmd, "displayed");
   }
 
@@ -379,6 +475,17 @@
       case "card":      showCard(cmd); break;
       case "html":      showHtml(cmd); break;
       case "image":     showImage(cmd); break;
+      case "slot":
+        if (cmd.action === "set") setSlot(cmd);
+        else if (cmd.action === "activate") {
+          var i = slotIndexById(cmd.slot_id);
+          if (i >= 0) activateSlot(i, false);
+          ack(cmd, "displayed");
+        }
+        else if (cmd.action === "remove") removeSlot(cmd);
+        else if (cmd.action === "clear") clearSlots(cmd);
+        else ack(cmd, "failed");
+        break;
       case "slideshow": // 三期实现，先明确失败
       case "light":     ack(cmd, "failed"); break;
       case "speak":     playSpeak(cmd); break;
@@ -396,7 +503,11 @@
   setInterval(function () {
     if (state.cardUntil && new Date() > state.cardUntil) {
       state.cardUntil = null;
-      if (state.view === "card") doClear(null);
+      if (state.temp && state.temp.type === "card") {
+        state.temp = null;                          // 到期回槽（无槽回时钟）
+      }
+      setView(state.activeSlot >= 0 ? "slot" : "clock");
+      renderSlots();
     }
   }, 1000);
 
@@ -441,37 +552,9 @@
 
   tickClock();
   setInterval(tickClock, 1000);
-  updateHistBar();
-  // 翻页：‹=往更旧的一条，›=往更新的一条（越界即回到实时画面）
-  $("hist-prev").addEventListener("click", function () {
-    histShow(state.histIdx < 0 ? hist.length - 1 : state.histIdx - 1);
-  });
-  $("hist-next").addEventListener("click", function () {
-    histShow(state.histIdx + 1);
-  });
-  // 横向滑动翻页（触屏）
-  var sx = null;
-  window.addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; }, { passive: true });
-  window.addEventListener("touchend", function (e) {
-    if (sx === null) return;
-    var dx = e.changedTouches[0].clientX - sx; sx = null;
-    if (Math.abs(dx) < 60) return;                       // 太短不算
-    if (state.histIdx < 0 && dx > 0) return;             // 实时画面时右滑不动作（新内容优先）
-    histShow(dx < 0 ? (state.histIdx < 0 ? hist.length - 1 : state.histIdx - 1)
-                    : state.histIdx + 1);
-  }, { passive: true });
+  renderSlots();
   window.addEventListener("beforeunload", function () {
     publishStatus("offline");
   });
-
-  // 键盘左右键与 ‹ › 按钮同逻辑
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "ArrowLeft") {
-      histShow(state.histIdx < 0 ? hist.length - 1 : state.histIdx - 1);
-    } else if (e.key === "ArrowRight") {
-      histShow(state.histIdx + 1);
-    }
-  });
-
   connect();
 })();

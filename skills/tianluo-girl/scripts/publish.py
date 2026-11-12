@@ -127,6 +127,23 @@ def main() -> None:
 
     sub.add_parser("clear", parents=[common], help="清除显示，回待机")
 
+    sl = sub.add_parser("slot", parents=[common], help="常驻页签槽管理")
+    sl_sub = sl.add_subparsers(dest="slot_action", required=True)
+    ss = sl_sub.add_parser("set", parents=[common], help="建立/更新页签（--kind url 外链 / html 内嵌）")
+    ss.add_argument("--id", required=True, help="槽 ID（如 poster/menu/checkin）")
+    ss.add_argument("--label", default=None, help="显示名（默认同 id）")
+    ss.add_argument("--icon", default=None, help="图标 emoji（默认 📄）")
+    ss.add_argument("--kind", choices=["url", "html"], default="url")
+    ss.add_argument("--url", default=None)
+    ss.add_argument("--html", default=None, help="HTML 字符串")
+    ss.add_argument("--html-file", default=None, help="HTML 文件路径")
+    ss.add_argument("--activate", action="store_true", help="推送后激活显示")
+    sa = sl_sub.add_parser("activate", parents=[common], help="切换到指定页签")
+    sa.add_argument("--id", required=True)
+    sr = sl_sub.add_parser("remove", parents=[common], help="删除页签")
+    sr.add_argument("--id", required=True)
+    sl_sub.add_parser("clear", parents=[common], help="清空所有页签，回时钟")
+
     a = p.parse_args()
 
     msg: dict
@@ -171,6 +188,30 @@ def main() -> None:
         msg = envelope("volume", level=a.level)
     elif a.cmd == "screen":
         msg = envelope("screen", state=a.state)
+    elif a.cmd == "slot":
+        if a.slot_action == "set":
+            if a.kind == "url" and not a.url:
+                raise SystemExit("slot set --kind url 需要 --url")
+            if a.kind == "html" and not (a.html or a.html_file):
+                raise SystemExit("slot set --kind html 需要 --html 或 --html-file")
+            html = None
+            if a.kind == "html":
+                html = a.html or read_file(a.html_file).decode("utf-8")
+            msg = envelope("slot", action="set", slot_id=a.id,
+                           label=a.label or a.id, icon=a.icon or "📄",
+                           kind=a.kind)
+            if a.kind == "url":
+                msg["url"] = a.url
+            else:
+                msg["html"] = html
+            if a.activate:
+                msg["activate"] = True
+        elif a.slot_action == "activate":
+            msg = envelope("slot", action="activate", slot_id=a.id)
+        elif a.slot_action == "remove":
+            msg = envelope("slot", action="remove", slot_id=a.id)
+        else:
+            msg = envelope("slot", action="clear")
     else:  # clear
         msg = envelope("clear")
 
