@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>田螺姑娘</title>
-<link rel="stylesheet" href="css/style.css?v=20261112e">
+<link rel="stylesheet" href="css/style.css?v=20261113f">
 </head>
 <body>
   <div id="status" class="badge badge-off">未连接</div>
@@ -23,20 +23,25 @@
     <ul id="card-items"></ul>
   </div>
 
-  <!-- 自定义网页（临时全屏层，兼容旧 html 指令；常驻页面请用 slot） -->
+  <!-- 自定义网页（临时模态层，居中卡片；常驻页面请用 slot） -->
   <div id="view-html" class="view hidden">
-    <iframe id="html-frame" sandbox="allow-scripts allow-same-origin" title="content"></iframe>
+    <div class="modal-mask"></div>
+    <div class="temp-box">
+      <iframe id="html-frame" sandbox="allow-scripts allow-same-origin" title="content"></iframe>
+      <button id="temp-close" class="temp-close hidden" aria-label="关闭">×</button>
+    </div>
   </div>
-
-  <!-- 临时层关闭按钮（右上角 X，触屏友好） -->
-  <button id="temp-close" class="temp-close hidden" aria-label="关闭">×</button>
 
   <!-- 常驻页签 iframe 容器（slot 指令动态创建，各槽独立保活） -->
   <div id="slot-frames"></div>
 
-  <!-- 图片 -->
+  <!-- 图片（临时模态层，居中卡片） -->
   <div id="view-image" class="view hidden">
-    <img id="image-img" alt="">
+    <div class="modal-mask"></div>
+    <div class="temp-box">
+      <img id="image-img" alt="">
+      <button id="temp-close-img" class="temp-close hidden" aria-label="关闭">×</button>
+    </div>
   </div>
 
   <!-- 左侧页签栏（点按切换常驻槽） -->
@@ -55,6 +60,6 @@
 
   <script src="vendor/mqtt.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/app.js?v=20261112e"></script>
+  <script src="js/app.js?v=20261113f"></script>
 </body>
 </html>

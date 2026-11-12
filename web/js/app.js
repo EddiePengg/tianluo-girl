@@ -567,7 +567,8 @@
 
   function updateTempClose() {
     var show = !!state.temp && (state.view === "html" || state.view === "image" || state.view === "card");
-    $("temp-close").classList.toggle("hidden", !show);
+    $("temp-close").classList.toggle("hidden", !(show && state.view === "html"));
+    $("temp-close-img").classList.toggle("hidden", !(show && state.view === "image"));
   }
 
   /* ---------- MQTT 连接 ---------- */
@@ -613,7 +614,8 @@
   setInterval(tickClock, 1000);
   renderSlots();
   loadSlots();   // 恢复持久化的页签（刷新/重启后还在）
-  $("temp-close").addEventListener("click", closeTemp);   // 临时层右上角 X
+  $("temp-close").addEventListener("click", closeTemp);     // 模态卡片右上角 X（html 层）
+  $("temp-close-img").addEventListener("click", closeTemp); // 模态卡片右上角 X（image 层）
   window.addEventListener("beforeunload", function () {
     publishStatus("offline");
   });
