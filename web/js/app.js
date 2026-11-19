@@ -245,16 +245,10 @@
     publishEvt({ type: "ack", cmd_id: cmd.id, action: cmd.type, result: result });
   }
 
-  /* ---------- 页签持久化（localStorage 兜底 + MQTT retained 服务端存储，2026-11-13 服务端化） ----------
-     任何设备打开网页连上 MQTT 都会收到同一份 retained 快照，页签不再绑死单机浏览器。 */
+  /* ---------- 页签持久化（纯服务端：MQTT retained，本地零存储，2026-11-13 i 版） ----------
+     页签唯一事实源在 broker，任何设备打开网页连上即同步同一套；本地不再存任何东西。 */
 
-  function saveSlots(publish) {
-    try {
-      localStorage.setItem("tianluo_slots", JSON.stringify(state.slots));
-      localStorage.setItem("tianluo_active_slot",
-        state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : "");
-    } catch (e) { console.warn("[persist] 保存失败", e); }
-    if (publish === false) return;                 // 远端快照应用时禁止回发（防回声循环）
+  function saveSlots() {
     if (client && client.connected) {
       try {
         client.publish(TOPIC_STATE, JSON.stringify({
@@ -266,25 +260,15 @@
     }
   }
 
-  var stateSynced = false;   // 首次远端快照处理标记：本地有真数据时以本地为准发布，防假/旧快照覆盖
-
   function applyRemoteState(payload) {
     try {
       var d = JSON.parse(payload.toString ? payload.toString() : payload);
       if (!d || !Array.isArray(d.slots)) return;
-      // 首次同步且本地已有页签 → 本地视为真相，发布覆盖远端（防假数据/旧快照冲掉真实状态）
-      if (!stateSynced && state.slots.length > 0) {
-        stateSynced = true;
-        saveSlots();
-        console.log("[persist] 本地页签为准，已发布到服务端", state.slots.length, "个");
-        return;
-      }
-      stateSynced = true;
       var activeId = d.active || "";
       // 指纹一致则不动（避免断线重连时反复重建 iframe）
       var localActive = state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : "";
       if (JSON.stringify(d.slots) === JSON.stringify(state.slots) && activeId === localActive) return;
-      // 以远端为准覆盖本地；不调 setSlot/activateSlot（它们会 publish，造成回声）
+      // 以远端为准渲染；远端就是唯一事实源
       state.slots = [];
       d.slots.forEach(function (s) {
         if (s && s.id && s.kind) state.slots.push({
@@ -297,32 +281,11 @@
       var idx = activeId ? slotIndexById(activeId) : -1;
       if (idx < 0 && state.slots.length) idx = 0;
       if (idx >= 0) activateSlot(idx);
-      saveSlots(false);                            // 只写 localStorage 兜底
       console.log("[persist] 已同步服务端页签", state.slots.length, "个");
     } catch (e) { console.warn("[persist] 服务端状态解析失败", e); }
   }
 
-  function loadSlots() {
-    try {
-      var raw = localStorage.getItem("tianluo_slots");
-      if (!raw) return;
-      var arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return;
-      arr.forEach(function (s) {
-        if (s && s.id && s.kind) setSlot({
-          slot_id: s.id, label: s.label, icon: s.icon,
-          kind: s.kind, url: s.url, html: s.html
-        });   // setSlot 内会 saveSlots，幂等无害
-      });
-      var act = localStorage.getItem("tianluo_active_slot");
-      if (act && slotIndexById(act) >= 0) activateSlot(slotIndexById(act));
-      if (state.slots.length) {
-        renderSlots();
-        setView(state.activeSlot >= 0 ? "slot" : "clock");
-      }
-      console.log("[persist] 恢复页签", state.slots.length, "个");
-    } catch (e) { console.warn("[persist] 恢复失败", e); }
-  }
+  // 页签不再本地恢复（i 版起纯服务端，等 MQTT retained 快照）
 
   /* ---------- 时钟 ---------- */
 
@@ -663,7 +626,7 @@
   tickClock();
   setInterval(tickClock, 1000);
   renderSlots();
-  loadSlots();   // 恢复持久化的页签（刷新/重启后还在）
+  // 页签由 MQTT retained 快照驱动（applyRemoteState），无需本地恢复
   $("temp-close").addEventListener("click", closeTemp);     // 模态卡片右上角 X（html 层）
   $("temp-close-img").addEventListener("click", closeTemp); // 模态卡片右上角 X（image 层）
   window.addEventListener("beforeunload", function () {
