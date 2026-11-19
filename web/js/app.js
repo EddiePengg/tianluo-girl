@@ -276,6 +276,11 @@
           kind: s.kind, url: s.url, html: s.html
         });
       });
+      // 重建各槽 iframe 并加载内容（slotEls 不建=内容区全黑）；清理远端已删除的槽
+      state.slots.forEach(function (s) { ensureSlotEl(s); loadSlotContent(s); });
+      Object.keys(slotEls).forEach(function (id) {
+        if (slotIndexById(id) < 0) { slotEls[id].wrap.remove(); delete slotEls[id]; }
+      });
       state.activeSlot = -1;
       renderSlots();
       var idx = activeId ? slotIndexById(activeId) : -1;
