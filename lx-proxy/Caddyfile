@@ -1,0 +1,26 @@
+# 龙虾出口：内网服务统一公网入口（2026-11-19 用户定架构）
+# https://lx.pt2153.com:8443/           → 海报服务(8137, 后端是 HTTPS 需 tls 传输)
+# https://lx.pt2153.com:8443/psych100   → 心理学100天(3100，Next basePath，路径原样透传)
+# https://lx.pt2153.com:8443/math60w    → 数学60周(3200，strip 前缀后 vite 相对资源)
+# 证书：acme.sh 泛域名（*.pt2153.com 通配，lx 子域覆盖）
+lx.pt2153.com:8443 {
+	tls C:\Users\nainaijia\.acme.sh\pt2153.com_ecc\fullchain.cer C:\Users\nainaijia\.acme.sh\pt2153.com_ecc\pt2153.com.key
+
+	encode zstd gzip
+
+	handle /psych100* {
+		reverse_proxy 127.0.0.1:3100
+	}
+	handle /math60w* {
+		uri strip_prefix /math60w
+		reverse_proxy 127.0.0.1:3200
+	}
+	handle {
+		reverse_proxy https://127.0.0.1:8137 {
+			transport http {
+				tls
+				tls_insecure_skip_verify
+			}
+		}
+	}
+}
