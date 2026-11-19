@@ -9,6 +9,7 @@
   var TOPIC_CMD = "tianluo/terminal/" + cfg.DEVICE_ID + "/cmd";
   var TOPIC_EVT = "tianluo/terminal/" + cfg.DEVICE_ID + "/evt";
   var TOPIC_STATUS = "tianluo/terminal/" + cfg.DEVICE_ID + "/status";
+  var TOPIC_STATE = "tianluo/terminal/" + cfg.DEVICE_ID + "/state";
 
   var MIME = {
     "mp3": "audio/mpeg",
@@ -244,14 +245,51 @@
     publishEvt({ type: "ack", cmd_id: cmd.id, action: cmd.type, result: result });
   }
 
-  /* ---------- 页签持久化（localStorage，刷新/重启后恢复） ---------- */
+  /* ---------- 页签持久化（localStorage 兜底 + MQTT retained 服务端存储，2026-11-13 服务端化） ----------
+     任何设备打开网页连上 MQTT 都会收到同一份 retained 快照，页签不再绑死单机浏览器。 */
 
-  function saveSlots() {
+  function saveSlots(publish) {
     try {
       localStorage.setItem("tianluo_slots", JSON.stringify(state.slots));
       localStorage.setItem("tianluo_active_slot",
         state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : "");
     } catch (e) { console.warn("[persist] 保存失败", e); }
+    if (publish === false) return;                 // 远端快照应用时禁止回发（防回声循环）
+    if (client && client.connected) {
+      try {
+        client.publish(TOPIC_STATE, JSON.stringify({
+          v: 1,
+          slots: state.slots,
+          active: state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : ""
+        }), { retain: true, qos: 1 });
+      } catch (e) { console.warn("[persist] 服务端同步失败", e); }
+    }
+  }
+
+  function applyRemoteState(payload) {
+    try {
+      var d = JSON.parse(payload.toString ? payload.toString() : payload);
+      if (!d || !Array.isArray(d.slots)) return;
+      var activeId = d.active || "";
+      // 指纹一致则不动（避免断线重连时反复重建 iframe）
+      var localActive = state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : "";
+      if (JSON.stringify(d.slots) === JSON.stringify(state.slots) && activeId === localActive) return;
+      // 以远端为准覆盖本地；不调 setSlot/activateSlot（它们会 publish，造成回声）
+      state.slots = [];
+      d.slots.forEach(function (s) {
+        if (s && s.id && s.kind) state.slots.push({
+          id: s.id, label: s.label, icon: s.icon,
+          kind: s.kind, url: s.url, html: s.html
+        });
+      });
+      state.activeSlot = -1;
+      renderSlots();
+      var idx = activeId ? slotIndexById(activeId) : -1;
+      if (idx < 0 && state.slots.length) idx = 0;
+      if (idx >= 0) activateSlot(idx);
+      saveSlots(false);                            // 只写 localStorage 兜底
+      console.log("[persist] 已同步服务端页签", state.slots.length, "个");
+    } catch (e) { console.warn("[persist] 服务端状态解析失败", e); }
   }
 
   function loadSlots() {
@@ -598,10 +636,12 @@
     client.on("connect", function () {
       setBadge("已连接 " + cfg.DEVICE_ID, true);
       client.subscribe(TOPIC_CMD, { qos: 1 });
+      client.subscribe(TOPIC_STATE, { qos: 1 });   // 页签快照（retained），连上即收到
       publishStatus("online");
     });
     client.on("message", function (topic, payload) {
       if (topic === TOPIC_CMD) handleCmd(payload);
+      else if (topic === TOPIC_STATE) applyRemoteState(payload);
     });
     client.on("reconnect", function () { setBadge("重连中…", false); });
     client.on("offline", function () { setBadge("离线", false); });
