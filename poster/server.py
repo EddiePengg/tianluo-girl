@@ -144,7 +144,7 @@ function showErr(msg) {
   else { e.style.display = 'none'; }
 }
 
-function src(p) { return '/file?path=' + encodeURIComponent(p); }
+function src(p) { return 'file?path=' + encodeURIComponent(p); }
 
 function render() {
   if (!list.length) { showErr('海报列表为空\\n（检查 NocoDB「当前海报」表）');
@@ -247,7 +247,7 @@ document.addEventListener('keydown', function(e){
  });
 
 function load() {
-  fetch('/api/posters', {cache: 'no-store'})
+  fetch('api/posters', {cache: 'no-store'})
     .then(function(r){ return r.json(); })
     .then(function(d){
       var oldKey = list.length && list[idx] ? list[idx].path : null;
