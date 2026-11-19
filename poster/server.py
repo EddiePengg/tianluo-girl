@@ -124,6 +124,13 @@ PAGE = """<!DOCTYPE html>
   #err { position:absolute; inset:0; display:none; color:#f66;
          align-items:center; justify-content:center; font-size:22px;
          text-align:center; padding:40px; z-index:6; }
+  /* 移动端竖屏（2026-11-19）：meta 行压缩防溢出，翻页按钮适配触控 */
+  @media (max-width: 768px) {
+    #meta { padding:8px 52px; font-size:12px; gap:10px; flex-wrap:wrap; }
+    #m-page { font-size:15px; }
+    #m-title { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .nav { width:44px; font-size:30px; opacity:.6; }
+  }
 </style>
 </head>
 <body>

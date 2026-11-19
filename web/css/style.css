@@ -138,3 +138,50 @@ html, body {
 .temp-close:active { background: rgba(248, 81, 73, .55); }
 
 /* 通知历史翻页条已移除，由左侧页签栏替代 */
+
+/* ========== 移动端竖屏适配（2026-11-19）：tab 栏沉底横排，桌面不受影响 ========== */
+@media (max-width: 768px) {
+  /* 页签栏：左侧竖条 → 底部横条 */
+  #slot-bar {
+    left: 0; right: 0; top: auto; bottom: 0;
+    width: auto; height: 76px;
+    border-right: none; border-top: 1px solid #30363d;
+  }
+  #slot-list {
+    flex-direction: row; justify-content: flex-start;
+    gap: 8px; padding: 10px 12px;
+    overflow-x: auto; overflow-y: hidden;
+  }
+  .slot-btn {
+    flex-direction: row; gap: 6px;
+    padding: 10px 14px; flex-shrink: 0;
+  }
+  .slot-btn .slot-icon { font-size: 22px; }
+  .slot-btn .slot-label { font-size: 14px; white-space: nowrap; }
+
+  /* 内容区：让出底部 76px */
+  #slot-frames { left: 0; bottom: 76px; }
+
+  /* 待机时钟随屏缩放 */
+  #clock-time { font-size: clamp(84px, 24vw, 160px); }
+  #clock-date { font-size: 22px; }
+  #clock-hint { font-size: 15px; }
+
+  /* 卡片字号收紧 */
+  #view-card { padding: 28px 22px; }
+  #card-title { font-size: 34px; margin-bottom: 18px; }
+  #card-items li { font-size: 22px; line-height: 1.7; padding-left: 24px; }
+  #view-card.banner { height: 46%; padding: 16px 22px; }
+  #view-card.banner #card-title { font-size: 24px; }
+
+  /* 播报条 */
+  #speak-bar { bottom: 88px; font-size: 20px; }
+  #listen-bar { font-size: 18px; padding: 12px; }
+
+  /* 连接徽标 */
+  .badge { top: 10px; right: 12px; font-size: 12px; }
+
+  /* 模态卡片全屏化 */
+  .temp-box { width: 94%; height: 84%; }
+  .temp-close { width: 44px; height: 44px; font-size: 24px; }
+}
