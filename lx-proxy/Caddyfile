@@ -16,6 +16,12 @@ lx.pt2153.com:8443 {
 
 	encode zstd gzip
 
+	# 无尾斜杠→补斜杠（防页面内相对路径资源解析到路径外导致哭脸）
+	redir /poster /poster/ 308
+	redir /menu /menu/ 308
+	redir /library /library/ 308
+	redir /math60w /math60w/ 308
+
 	handle /poster* {
 		uri strip_prefix /poster
 		reverse_proxy https://127.0.0.1:8137 {
