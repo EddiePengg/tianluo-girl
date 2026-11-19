@@ -1,13 +1,48 @@
 # 龙虾出口：内网服务统一公网入口（2026-11-19 用户定架构）
-# https://lx.pt2153.com:8443/           → 海报服务(8137, 后端是 HTTPS 需 tls 传输)
-# https://lx.pt2153.com:8443/psych100   → 心理学100天(3100，Next basePath，路径原样透传)
-# https://lx.pt2153.com:8443/math60w    → 数学60周(3200，strip 前缀后 vite 相对资源)
+# 入口=导航页(portal 8100)，各服务走路径：
+# https://lx.pt2153.com:8443/           → 龙虾门户·服务导航(portal 8100，探测各后端活性)
+# https://lx.pt2153.com:8443/poster/    → 海报服务(8137，后端 HTTPS 需 tls 传输；strip /poster 前缀，海报前端已改相对路径)
+# https://lx.pt2153.com:8443/menu/      → 每日菜单(portal 自带，menu.html，公开)
+# https://lx.pt2153.com:8443/psych100   → 心理学100天(3100，Next basePath，路径原样透传，应用层口令)
+# https://lx.pt2153.com:8443/math60w    → 数学60周(3200，strip 前缀，应用层口令)
+# https://lx.pt2153.com:8443/bookqueue  → 书胃(8090，Next basePath，🔒 Caddy Basic Auth=eddiepeng)
+# https://lx.pt2153.com:8443/dailybook  → 小P的每日一书(3020，Next basePath，🔒 Basic Auth)
+# https://lx.pt2153.com:8443/library/   → 图书馆查询(portal 托管 library.html，🔒 Basic Auth)
+# 注意：8888 端口的裸 http.server 已废弃（根目录=桌面整树暴露，绝不可挂公网）
+# 新增服务：portal.py 的 SERVICES 加一条 + 这里加一段 handle
 # 证书：acme.sh 泛域名（*.pt2153.com 通配，lx 子域覆盖）
 lx.pt2153.com:8443 {
 	tls C:\Users\nainaijia\.acme.sh\pt2153.com_ecc\fullchain.cer C:\Users\nainaijia\.acme.sh\pt2153.com_ecc\pt2153.com.key
 
 	encode zstd gzip
 
+	handle /poster* {
+		uri strip_prefix /poster
+		reverse_proxy https://127.0.0.1:8137 {
+			transport http {
+				tls
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	handle /bookqueue* {
+		basic_auth {
+			eddiepeng $2a$14$YgSomdW.BwTrMsKBIiX4Vu/NhpJanS5ObBhzmPklZIL5rtW8fxFRq
+		}
+		reverse_proxy 127.0.0.1:8090
+	}
+	handle /dailybook* {
+		basic_auth {
+			eddiepeng $2a$14$YgSomdW.BwTrMsKBIiX4Vu/NhpJanS5ObBhzmPklZIL5rtW8fxFRq
+		}
+		reverse_proxy 127.0.0.1:3020
+	}
+	handle /library* {
+		basic_auth {
+			eddiepeng $2a$14$YgSomdW.BwTrMsKBIiX4Vu/NhpJanS5ObBhzmPklZIL5rtW8fxFRq
+		}
+		reverse_proxy 127.0.0.1:8100
+	}
 	handle /psych100* {
 		reverse_proxy 127.0.0.1:3100
 	}
@@ -16,11 +51,6 @@ lx.pt2153.com:8443 {
 		reverse_proxy 127.0.0.1:3200
 	}
 	handle {
-		reverse_proxy https://127.0.0.1:8137 {
-			transport http {
-				tls
-				tls_insecure_skip_verify
-			}
-		}
+		reverse_proxy 127.0.0.1:8100
 	}
 }

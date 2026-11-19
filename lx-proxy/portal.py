@@ -18,6 +18,9 @@ SERVICES = [
     {"name": "菜谱",       "icon": "🍚", "path": "/menu/",     "check": 0,    "desc": "每日菜单（饭谱与库存）"},
     {"name": "心理学100天", "icon": "📚", "path": "/psych100",  "check": 3100, "desc": "读书打卡 · 心理学进度"},
     {"name": "数学60周",   "icon": "🔢", "path": "/math60w/",  "check": 3200, "desc": "数学学习计划 · 游戏化打卡"},
+    {"name": "书胃",       "icon": "📖", "path": "/bookqueue", "check": 8090, "desc": "待消化书单管理", "lock": True},
+    {"name": "小P的每日一书", "icon": "🟥", "path": "/dailybook", "check": 3020, "desc": "每日荐书", "lock": True},
+    {"name": "图书馆查询",  "icon": "🏠", "path": "/library/",  "check": 0,    "desc": "OPAC 馆藏检索结果", "lock": True},
     {"name": "健身动作库", "icon": "💪", "path": None,         "check": 0,    "desc": "大屏页签内的动作卡片（非独立服务）"},
     {"name": "田螺姑娘",   "icon": "🖥️", "path": "__ext__",    "check": 0,    "desc": "家里的大屏终端", "external": "https://tianluo.pt2153.com"},
 ]
@@ -93,7 +96,7 @@ def render():
         cards.append(
             f'<a class="card{cls}" href="{href}"{target}>'
             f'<div class="icon">{s["icon"]}</div>'
-            f'<div class="name">{s["name"]}</div>'
+            f'<div class="name">{s["name"]}{" 🔒" if s.get("lock") else ""}</div>'
             f'<div class="desc">{s["desc"]}</div>{st}</a>'
         )
     alive_n = sum(1 for s in items if s["alive"])
@@ -120,6 +123,11 @@ class H(BaseHTTPRequestHandler):
             if os.path.isfile(MENU_HTML):
                 return self._send(200, open(MENU_HTML, encoding="utf-8").read())
             return self._send(404, "菜单还没推送（portal/menu.html 不存在）")
+        if p.rstrip("/") == "/library":
+            lib = os.path.join(ROOT, "library.html")
+            if os.path.isfile(lib):
+                return self._send(200, open(lib, encoding="utf-8").read())
+            return self._send(404, "图书馆页面不存在（portal/library.html）")
         return self._send(200, render())
 
 if __name__ == "__main__":

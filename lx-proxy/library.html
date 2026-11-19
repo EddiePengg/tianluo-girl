@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图书馆搜索结果 - 西海岸图书馆</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,sans-serif; background:#f5f5f7; color:#1a1a2e; line-height:1.6; }
+.header { background:#fff; padding:20px 24px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; z-index:100; }
+.header h1 { font-size:20px; }
+.header .sub { color:#6b7280; font-size:14px; margin-top:4px; }
+.toolbar { margin-top:12px; display:flex; gap:10px; }
+.search-bar { flex:1; }
+.search-bar input { width:100%; padding:8px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; }
+.filter-bar { display:flex; gap:8px; }
+.filter-btn { padding:6px 14px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; white-space:nowrap; }
+.filter-btn.active { background:#e94560; color:#fff; border-color:#e94560; }
+.main { max-width:1100px; margin:0 auto; padding:24px 20px; }
+.summary { display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+.stat { background:#fff; border-radius:12px; padding:16px 20px; border:1px solid #e5e7eb; flex:1; min-width:120px; text-align:center; }
+.stat .num { font-size:28px; font-weight:700; }
+.stat .label { font-size:13px; color:#6b7280; margin-top:4px; }
+.stat.found .num { color:#10b981; }
+.stat.notfound .num { color:#ef4444; }
+.stat.avail .num { color:#3b82f6; }
+table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; font-size:13px; }
+th { background:#f9fafb; padding:10px 12px; text-align:left; color:#6b7280; font-weight:600; border-bottom:1px solid #e5e7eb; }
+td { padding:10px 12px; border-bottom:1px solid #f3f4f6; }
+tr:hover { background:#f9fafb; }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; }
+.tag-yes { background:#d1fae5; color:#065f46; }
+.tag-no { background:#fee2e2; color:#991b1b; }
+.tag-queue { background:#dbeafe; color:#1e40af; }
+.tag-shuyu { background:#fef3c7; color:#92400e; }
+.callno { font-family:monospace; background:#f3f4f6; padding:2px 6px; border-radius:4px; font-size:12px; }
+.available { color:#10b981; font-weight:600; }
+.unavailable { color:#ef4444; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📚 西海岸图书馆搜索结果</h1>
+  <div class="sub">书遇 + 书胃待消化，共 397 本 | 有馆藏 82 本 | 可借 66 本</div>
+  <div class="toolbar">
+    <div class="search-bar"><input type="text" id="search" placeholder="搜索书名..." oninput="filterTable()"></div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
+      <button class="filter-btn" onclick="setFilter('found', this)">有馆藏</button>
+      <button class="filter-btn" onclick="setFilter('avail', this)">可借</button>
+      <button class="filter-btn" onclick="setFilter('notfound', this)">无馆藏</button>
+    </div>
+  </div>
+</div>
+<div class="main">
+  <div class="summary">
+    <div class="stat"><div class="num">379</div><div class="label">总书目</div></div>
+    <div class="stat found"><div class="num">82</div><div class="label">有馆藏</div></div>
+    <div class="stat avail"><div class="num">66</div><div class="label">可借</div></div>
+    <div class="stat notfound"><div class="num">301</div><div class="label">无馆藏</div></div>
+  </div>
+  <table id="dataTable">
+    <thead><tr>
+      <th>书名</th><th>来源</th><th>馆藏</th><th>索书号</th><th>在馆</th><th>馆藏地</th>
+    </tr></thead>
+    <tbody>
+        <tr class="row status-none">
+            <td>寄生首尔（揭露首尔的贫穷与暴利、挣扎与躺赢）</td>
+            <td>李惠美</td>
+            <td>社会纪实</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>复利人生：从瞎忙到长期增值</td>
+            <td>任宽</td>
+            <td>个人成长</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>自杀的心理学家：不要过任何形式的"二手人生"（轻纪实）</td>
+            <td>索析</td>
+            <td>轻纪实/心理</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>如何在一天内修复你的人生（Dan Koe）</td>
+            <td>大吕</td>
+            <td>成长指南解读</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>一天重启人生</td>
+            <td>任破局</td>
+            <td>认知觉醒</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>中年重启</td>
+            <td>迈克尔·克林顿</td>
+            <td>人生转型</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>比三亚更狠，这个海边挤满上"体校"的中产（轻纪实）</td>
+            <td>每日人物 郑思芳</td>
+            <td>轻纪实/社会</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>为自己思考:终身成长的底层逻辑</td>
+            <td>奥赞·瓦罗尔</td>
+            <td>独立思考</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>轻松主义：让关键的事情变得容易做</td>
+            <td>格雷戈·麦吉沃恩</td>
+            <td>自我管理</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>从负债2000万到心想事成每一天</td>
+            <td>小池浩</td>
+            <td>心灵励志</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>语言学的邀请</td>
+            <td>塞缪尔·早川</td>
+            <td>语义学经典</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>人生十年，不可辜负的20岁到30岁</td>
+            <td>梅格·杰伊</td>
+            <td>心理学</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>学会去爱：给新人类的恋爱成长课</td>
+            <td>满堂</td>
+            <td>恋爱成长</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+        <tr class="row status-none">
+            <td>语言塑造人类思维</td>
+            <td>维奥丽卡·玛丽安</td>
+            <td>心理语言学</td>
+            <td colspan="3">无馆藏</td>
+        </tr>
+    <tr class="row">
+      <td>人类笨拙问题解决大全</td>
+      <td>[日]中岛美铃 / 宋刚 译</td>
+      <td>2026-8 · 微信读书</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="tag tag-queue">书胃·待消化</span></td>
+    </tr>
+    <tr class="row">
+      <td>从诺兰的奥德赛，看奥德赛的诺兰（轻人物）</td>
+      <td>樊中恺</td>
+      <td>2026-8 · 微信读书</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="tag tag-queue">书胃·待消化</span></td>
+    </tr>
+    
+    <tr class="row">
+      <td>越追求，越空虚：现代人的浮士德困境</td>
+      <td>章希寅</td>
+      <td>2026-7 · 微信读书出版</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="tag tag-queue">书胃·待消化</span></td>
+    </tr>
+    
+    <tr class="row">
+      <td>我选择不再重复创伤</td>
+      <td>[瑞士]爱丽丝·米勒</td>
+      <td>北京联合出版公司 · 2026-8</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="tag tag-queue">书遇·豆瓣</span></td>
+    </tr>
+    
+<tr class="row notfound"><td>媚史</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>女儿抑郁症后一位父亲的反思</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>Gap期生存游戏</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你的性格可能是旧日的防御</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>被当作问题解决的休学孩子</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>性爱十年全国大学生性行为</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>肉蒲团</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>好色一代女</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I313.45/365</span></td><td class="available">✅ 1/1</td><td>西海岸新区_书墙3楼南(E,I3-7)</td></tr>
+<tr class="row notfound"><td>两肉缘</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>城中村的年轻人</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>为什么有些童年创伤三十岁后才爆发</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>单身女性译文纪实</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I313.55/21</span></td><td class="available">✅ 2/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>隐藏的大脑潜意识如何操控</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>迷走神经的疗愈力</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>为什么我们开始爱上坏女人</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>极限体能</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一口好牙把口腔医生带回家</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>要有光</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I25/206</span></td><td class="available">✅ 1/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>如何将情绪转化为生产力</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>伊人在暹罗</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>雄激素关于冒险竞争与赢</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>危险关系</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I565.45/58</span></td><td class="available">✅ 1/1</td><td>西海岸新区_书墙3楼南(E,I3-7)</td></tr>
+<tr class="row found"><td>红与黑</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I565.44/22</span></td><td class="unavailable">📖 0/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>依恋障碍</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G78/27</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>饥饿的母爱治愈母爱缺失</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>探索情绪痛苦EFT整合心理疗法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>为爱牺牲的中国父母</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>别用无限的准备自我欺骗</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>她的过去为什么会刺痛你</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>电子电路知识与实践课堂</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>自愈的本能七大自然疗法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>翻过自己的山</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>奇特的一生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>友情心理学如何在关系中彼此疗愈</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>探秘中国心灵</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>时间贫困</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>无意识顺从与觉知</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>0次与10000次</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>怎样决定大事</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>适时退出</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>新下层</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>单干</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>停不下来的念头</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>日本精神医疗乱象</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我在美国当精神科医生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>一生之敌</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/3112</span></td><td class="unavailable">📖 0/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>精要主义</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>不要再沉迷优化人生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>天生不同MBTI开山之作</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你为夜宵支付了什么代价</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>别把零食当成生活的奖励</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我在伦敦卖豪宅</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>我用中文做了场梦</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I546.65/17</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>去您的巴西</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>东京八平米</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I313.65/158</span></td><td class="available">✅ 2/2</td><td>西海岸新区_24小时</td></tr>
+<tr class="row notfound"><td>在中国大地上搭火车旅行记</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我被考公困住的十年</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>县城体制内女孩不想将就</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一个阿富汗女人的来信</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>和衡水中学在一起的2557天</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>短剧时代流量成瘾</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>死刑犯给我讲了一个故事</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>命运的求索中国命理学</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>记笔记轻经典</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我在印度的701天</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>工作消费主义和新穷人</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>童年观察影响人一生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>IFS自我疗愈法内在家庭系统</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>自我救赎战胜复杂性创伤</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>摆脱共情</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>积极上瘾</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>像间谍一样观察</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>焦虑是一种能量</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B842.6/51</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>内在疗愈</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>别让敏感害了你</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>讨好型人格</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>总能让你开心的100个小定律</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>习惯逃避</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>如何不喜欢一个人</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>竟然想通了</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>认知与改变</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>内向者如何成为沟通高手</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>怪癖心理学</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>警惕你身边的隐形攻击者</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>我战胜了抑郁症</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R749.4/26</span></td><td class="available">✅ 1/1</td><td>西海岸新区_书墙1楼南(乐龄)</td></tr>
+<tr class="row notfound"><td>这样想你才不焦虑</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>焦虑症与恐惧症手册</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>社交恐惧</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C912.11/61</span></td><td class="unavailable">📖 0/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>一年顶十年</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">F272.9/45</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>斜杠青年</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">F241.4/5</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>拆掉思维里的墙</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/11</span></td><td class="available">✅ 2/4</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>三十岁一切刚刚开始</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>没有计划的人一定被计划掉</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>别把想法一直放在脑子里</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>用一年时间重生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你有底气的样子真好看</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>如何戒掉坏习惯</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>臣服实验</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>醒脑之书</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>20~30岁我拿十年做什么</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>下个10000小时你打算怎么过</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>微精通</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>热爱可抵岁月漫长</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>量化自我</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>如何有效阅读一本书</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>洋葱阅读法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>学习高手</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G791/60</span></td><td class="available">✅ 1/1</td><td>西海岸新区_书墙2楼南(D,G-H,J,N-Z)</td></tr>
+<tr class="row notfound"><td>你不是记性差只是没找对方法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>聪明人都用记事本</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一分钟超强读书法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一分钟超强笔记术</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>别让不会记笔记害了你</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>快速阅读</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G792/60</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>高效清单工作法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>时间倍增术</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>早起的奇迹</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/264</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>极简时间管理</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>极简主义</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C913.3/15</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>手把手教你玩脱口秀</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>说出来聊下去</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>超级询问术</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>微文案</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>让你在公司显得很能干的52种方法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>白手套</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>不懂带团队你就自己干到死</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>创业维艰</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>副业赚钱之道</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>模型思维</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>副业赚钱</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>麦肯锡问题分析与解决技巧</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>性吸引力私密教程</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>讯问学</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>无法上映的54部电影</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>各种主义</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>每一天爱自己</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R395.6/96</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>别再把亲戚当资源</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>品味与阶层</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>动机心理学</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B842.6/83</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>穷查理宝典</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B821/192</span></td><td class="unavailable">📖 0/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>学会提问</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G791/79</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>女性真正想要的「性」，究竟是什么样？（轻心理）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你的房间困住了你</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>不愿走出家门的人</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你以为在过渡，但这就是你的一生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>超火的人设自查25问</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>别浪费时间过别人的人生</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>宁愿天真</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I565.55/10</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>书都不会读，你还想成功</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>清晰思考：将平凡时刻转化为非凡成果</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>麻烦别人的艺术</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>信号与噪声</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>自私的基因</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">Q343.1/12</span></td><td class="unavailable">📖 0/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>红皇后效应</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>思考，快与慢</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>影响力</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">K827/1324</span></td><td class="unavailable">📖 0/1</td><td>西海岸新区_书墙2楼北(K)</td></tr>
+<tr class="row notfound"><td>巨人的工具</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>纳瓦尔宝典</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>动物本能</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B80-49/20</span></td><td class="available">✅ 1/1</td><td>西海岸新区_老馆少儿</td></tr>
+      <tr class="row found"><td>八十天环游地球</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I565.44/17</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+      <tr class="row notfound"><td>经验的疆界</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>上下班路上能做的95件事</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>自信力</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>仪式的力量</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>自由职业，并不自由：真实时薪、平台和限流</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>一个最被低估的运动，抗抑郁还能夺回专注力（轻心理）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>不被时间追赶的活法</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>不消费的一年</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>不消费主义者生存手册：吃剩饭、翻垃圾桶，我就是不购物（轻纪实）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>记事本圆梦计划</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>看似自由的生活态度，正在杀死你的活人感（轻心理）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>如何一眼识别有钱人</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>租房鄙视链的底端，挤满高龄、孕期、养宠人（轻纪实）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>每天戴耳机的人，正在怎样损耗听力？</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>张雪峰倒下后，被运动反噬的中年心脏（轻纪实）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>在中东，及时行乐</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>萨尔瓦多：我们厌倦的平凡生活，是他们渴望的未来（轻游记）</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>从优秀到卓越</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>记忆宫殿</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>思考中医</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row notfound"><td>人性阻力：惯性、惰性、情绪和抵触</td><td><span class="tag tag-queue">书胃</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>《芳华》(你触摸了我)</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>《大脑通信员》</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>《小狗钱钱》</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>阿伦森自传</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>小岛经济学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">F0/16</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>牛奶可乐经济学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>金融的本质</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>社会学的想象力</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>乡土中国</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C912.82/3</span></td><td class="unavailable">📖 0/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>大国的兴衰</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">D5/12</span></td><td class="available">✅ 2/2</td><td>西海岸新区_书墙2楼南(D,G-H,J,N-Z)</td></tr>
+<tr class="row notfound"><td>超负荷的大脑</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一切都是心智操控</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>涌现</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C93/18</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>达科效应</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>为什么</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B842.5/2</span></td><td class="unavailable">📖 0/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>重塑大脑回路</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>混乱</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I712.85/220</span></td><td class="available">✅ 2/2</td><td>西海岸新区_少儿外借</td></tr>
+<tr class="row found"><td>重塑杏仁核</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B842.6/758</span></td><td class="unavailable">📖 0/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>Attached</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>不原谅也没关系</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>隐秘的羞耻感</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>取悦症</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>人体简史</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>大脑传</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>睡眠修复：解决疲劳困扰的新科学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>抑郁、焦虑和药物的那些事</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>消失的多巴胺</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>以日为鉴</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>生育制度</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C912.82/4:8</span></td><td class="available">✅ 3/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>如何快速了解一个行业</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>依恋的修复</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>身体从未忘记</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R749.055/32</span></td><td class="available">✅ 1/1</td><td>西海岸新区_书墙1楼南(乐龄)</td></tr>
+<tr class="row found"><td>不被理解的少年</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G775/5</span></td><td class="unavailable">📖 0/1</td><td>西海岸新区_少儿外借</td></tr>
+<tr class="row notfound"><td>达尔文的危险思想</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>唤醒老虎：启动自我疗愈本能</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>物理学的未来</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>结构</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">O342/10</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>看电影学金融</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一本书读懂30部经济学经典</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>求偶智力：性、约会与爱情的心理机制</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>学习场景的革命</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>优秀到不能被忽视</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>心理抚养</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>天真的人类学家</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>犹豫的热带</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>所有女生要知道</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>众病之王</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我们为什么要睡觉？</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>故乡无用</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>战斗细胞</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>网：阿加西自传</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>错误的行为</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>助推</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">F0/11</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>大棋局</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I235.2/17</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>津巴多时间心理学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>論生命之短暫</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>自控力</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B84/63:7</span></td><td class="available">✅ 1/1</td><td>西海岸新区_少儿外借</td></tr>
+<tr class="row found"><td>拖延心理学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/162</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>让时间治愈一切</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>时间的秩序</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">O4/41</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>话/镜</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>审丑</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>手机大脑</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>安慰剂效应</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>献给阿尔吉侬的花朵</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>美丽新世界</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I561.45/292</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>一九八四</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I561.45/420</span></td><td class="unavailable">📖 0/2</td><td>西海岸新区_24小时</td></tr>
+<tr class="row found"><td>动物农场</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I561.45/372</span></td><td class="available">✅ 1/3</td><td>西海岸新区_24小时</td></tr>
+<tr class="row notfound"><td>大脑开挂</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>掌控注意力</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>寻找你的维他命人</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>掌控习惯</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>跨越不可能</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>认知天性</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>为什么学生不喜欢上学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>如何成为不完美主义者</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>哲学思维</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>如何了解一个人</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>协和肖医生写给大家的医美指南</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>空洞的心：成瘾的真相与疗愈</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B846/2</span></td><td class="available">✅ 2/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>少有人走的路</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R749.055/41</span></td><td class="available">✅ 1/3</td><td>西海岸新区_书墙1楼南(乐龄)</td></tr>
+<tr class="row notfound"><td>当下的力量</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>你当像鸟飞往你的山</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G624/64</span></td><td class="unavailable">📖 0/3</td><td>西海岸新区_书墙2楼南(D,G-H,J,N-Z)</td></tr>
+<tr class="row notfound"><td>噪声：人类判断的缺陷</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>原则</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">TP277.2/3</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>原则：应对变化中的世界秩序</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>不配得感</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>认同自己：如何超越与生俱来的弱点</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>二手时间</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I511.45/4</span></td><td class="available">✅ 3/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>佛陀传</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>可能性的艺术</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>皮格马利翁效应</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>模仿欲望</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/26</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>有问题的姿势</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>性格的缺陷</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>稀缺</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I267.1/1955</span></td><td class="available">✅ 3/4</td><td>西海岸新区_书墙3楼北(I2)</td></tr>
+<tr class="row notfound"><td>最重要的事，只有一件</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>阅人无数</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>这不是你的错</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>恰如其分的自尊</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B842.6/5</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>金钱心理学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C912.69/2</span></td><td class="unavailable">📖 0/5</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>金钱博弈</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>粉红色柔软的学习者</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>成瘾：在放纵中寻找平衡</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">Q422/1</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>成瘾的深渊</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>被欺凌的与被侮辱的</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我和我不为人知的瘾</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>创伤与记忆：身体体验疗法如何重塑创伤记忆</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你的生存本能正在杀死你</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>提高你的创伤免疫力</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你根本不用和别人比</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>创伤遗传：心理咨询师和她的11位来访者</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R749.05/27</span></td><td class="available">✅ 3/3</td><td>西海岸新区_书墙1楼南(乐龄)</td></tr>
+<tr class="row notfound"><td>潜意识知道答案</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>情绪词典：你的感受试图告诉你什么</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>创伤与解离</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你在逃避什么</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>幸福之路</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B82/5</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>微习惯：简单到不可能失败的自我管理法则</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>惯性带你飞</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>弹性习惯</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B842.6/33</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>命在蛋白质</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>皮肤简史</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R75/1</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>我的父亲是Loser</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I512.45/59</span></td><td class="available">✅ 3/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>心理创伤疗愈之道</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>你经历了什么？</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>共情式对话</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我的骨头没有忘记</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>没有个性的人</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I521.45/4</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>哈萨比斯：谷歌AI之脑</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>罩袍之刺</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>为什么是毛泽东</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>断头王后：玛丽·安托瓦内特传</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>幸福的陷阱</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>重新认识焦虑</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>童年的消逝</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>焦虑的一代</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>RNA时代</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我 刀枪不入</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>那不勒斯四部曲</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>分心的优势</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>他们在跟踪我：变态心理学案例故事</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>颓废与沉默 : 透视犬儒文化</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>态度改变与社会影响</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>上瘾</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">TB472/2</span></td><td class="available">✅ 1/1</td><td>西海岸新区_书墙2楼南(D,G-H,J,N-Z)</td></tr>
+<tr class="row found"><td>非暴力沟通</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G78/187</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>谁会认错</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>管理心理学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">C93/14</span></td><td class="available">✅ 2/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>如何掌控自己的时间和生活</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>把时间当作朋友</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>子弹笔记</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>瞬变</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>如何阅读一本书</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G236/11:1</span></td><td class="available">✅ 4/4</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>算法之美</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">TP311.12/4</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>学习力</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">G782/136</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>如何高效学习</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>吃掉那只青蛙</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>国王武士祭祀诗人</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>私域流量</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>高三突围</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>福格行为模型</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>王者速度法</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>冷读术</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>搞定Ⅰ</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>索尼娅的驾驶课</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I534.45/10</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>清醒梦 </td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>高效能人士的七个习惯</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/3141</span></td><td class="available">✅ 1/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>生活黑客</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>认知觉醒</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B848.4/299</span></td><td class="unavailable">📖 0/3</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>每周工作四小时</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>整理的艺术</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>好好学习：个人知识管理</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I247.7/5432</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>高效学习之道</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>被讨厌的勇气</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B821/2334</span></td><td class="unavailable">📖 0/4</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>蛤蟆先生去看心理医生</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">B849.1/4</span></td><td class="unavailable">📖 0/9</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>钝感力</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I313.65/91</span></td><td class="available">✅ 2/3</td><td>西海岸新区_书墙3楼南(E,I3-7)</td></tr>
+<tr class="row notfound"><td>为什么顾客不够买你的产品</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>2001：太空漫游</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>简单的逻辑学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>一想到还有95%的问题留给人类 我就放心了</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>5000天后的世界</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">F11/145</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>图解趣味经济学</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">F0/65</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row found"><td>故事感</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I053.5/18</span></td><td class="available">✅ 1/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>天才在左 疯子在右</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我会笑得大方 走得坦荡</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>红玫瑰与白玫瑰</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>我在大学谈恋爱</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row found"><td>小王子</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I565.88/28</span></td><td class="available">✅ 1/2</td><td>西海岸新区_24小时</td></tr>
+<tr class="row found"><td>沉默的大多数</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">I267.1/86</span></td><td class="available">✅ 2/2</td><td>西海岸新区_成人外借</td></tr>
+<tr class="row notfound"><td>富爸爸 穷爸爸</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>人·兽·鬼</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>大学突围</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>自学是门手艺</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+<tr class="row notfound"><td>再见，失眠</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+      <tr class="row found"><td>理智胜过情感</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-yes">有</span></td><td><span class="callno">R395.6/1</span></td><td class="available">✅ 1/1</td><td>西海岸新区_成人外借</td></tr><tr class="row notfound"><td>品味与阶层</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr><tr class="row notfound"><td>我是怎样摆平焦虑的</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr><tr class="row notfound"><td>自信的陷阱</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr><tr class="row notfound"><td>伯恩斯情绪疗法</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr><tr class="row notfound"><td>国王武士祭司诗人</td><td><span class="tag tag-shuyu">书遇</span></td><td><span class="tag tag-no">无</span></td><td>-</td><td>-</td><td>-</td></tr>
+    </tbody>
+  </table>
+</div>
+<script>
+let currentFilter = 'all';
+function filterTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const rows = document.querySelectorAll('.row');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const matchSearch = !q || text.includes(q);
+    let matchFilter = true;
+    if (currentFilter === 'found') matchFilter = row.classList.contains('found');
+    else if (currentFilter === 'notfound') matchFilter = row.classList.contains('notfound');
+    else if (currentFilter === 'avail') {
+      matchFilter = row.classList.contains('found') && row.querySelector('.available');
+    }
+    row.style.display = (matchSearch && matchFilter) ? '' : 'none';
+  });
+}
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterTable();
+}
+</script>
+</body>
+</html>
