@@ -28,6 +28,7 @@ description: 控制家里的"田螺姑娘"大屏终端（工控机 kiosk 网页�
   - `MQTT_USERNAME` / `MQTT_PASSWORD`：EMQX 认证用户（生产必配，公共 broker 留空）
   - `DEVICE_ID`：默认 `girl-01`
 - 主题：`tianluo/terminal/{DEVICE_ID}/cmd`（下行指令）、`/evt`（上行事件）、`/status`（retained 在线状态）
+- 页签状态：`/state`（retained 快照，2026-11-13 g 版起）——slots/active 由页面发布，broker 即服务端存储，任何设备打开网页即同步同一页签；localStorage 仅断网兜底。**agent 侧直接对 `tianluo/terminal/{DEVICE_ID}/state` 发 retain 消息可整批覆盖页签（含 html 槽位内容），验证脚本 `Temp/verify_slots_server.py`**
 - 百炼 API Key：自动读 `DASHSCOPE_API_KEY` 或 `~/.bailian/config.json`，无需配置
 
 ## 怎么用
