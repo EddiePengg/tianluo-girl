@@ -266,10 +266,20 @@
     }
   }
 
+  var stateSynced = false;   // 首次远端快照处理标记：本地有真数据时以本地为准发布，防假/旧快照覆盖
+
   function applyRemoteState(payload) {
     try {
       var d = JSON.parse(payload.toString ? payload.toString() : payload);
       if (!d || !Array.isArray(d.slots)) return;
+      // 首次同步且本地已有页签 → 本地视为真相，发布覆盖远端（防假数据/旧快照冲掉真实状态）
+      if (!stateSynced && state.slots.length > 0) {
+        stateSynced = true;
+        saveSlots();
+        console.log("[persist] 本地页签为准，已发布到服务端", state.slots.length, "个");
+        return;
+      }
+      stateSynced = true;
       var activeId = d.active || "";
       // 指纹一致则不动（避免断线重连时反复重建 iframe）
       var localActive = state.activeSlot >= 0 && state.slots[state.activeSlot] ? state.slots[state.activeSlot].id : "";
