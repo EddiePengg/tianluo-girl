@@ -168,6 +168,13 @@ class H(BaseHTTPRequestHandler):
                     self._send(200, "text/html; charset=utf-8", f.read())
             else:
                 self._send(404, "text/plain; charset=utf-8", "menu.html not found")
+        elif self.path.startswith("/library"):
+            lib = os.path.join(ROOT, "library.html")
+            if os.path.exists(lib):
+                with open(lib, "rb") as f:
+                    self._send(200, "text/html; charset=utf-8", f.read())
+            else:
+                self._send(404, "text/plain; charset=utf-8", "library.html not found")
         else:
             self._send(404, "text/plain; charset=utf-8", "not found")
 
