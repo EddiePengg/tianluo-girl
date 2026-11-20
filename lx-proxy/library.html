@@ -49,6 +49,10 @@ tr:hover { background:#f9fafb; }
       <button class="filter-btn" onclick="setFilter('found', this)">有馆藏</button>
       <button class="filter-btn" onclick="setFilter('avail', this)">可借</button>
       <button class="filter-btn" onclick="setFilter('notfound', this)">无馆藏</button>
+      <span style="margin-left:14px;color:#9ca3af;font-size:12px">来源：</span>
+      <button class="filter-btn src-btn active" onclick="setSrc('all', this)">全部</button>
+      <button class="filter-btn src-btn" onclick="setSrc('queue', this)">📘 待读（书胃）</button>
+      <button class="filter-btn src-btn" onclick="setSrc('shuyu', this)">✅ 已读（书遇）</button>
     </div>
   </div>
 </div>
@@ -634,6 +638,15 @@ tr:hover { background:#f9fafb; }
 </div>
 <script>
 let currentFilter = 'all';
+let currentSrc = 'all';
+
+function setSrc(s, btn) {
+  currentSrc = s;
+  document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterTable();
+}
+
 function filterTable() {
   const q = document.getElementById('search').value.toLowerCase();
   const rows = document.querySelectorAll('.row');
@@ -646,12 +659,15 @@ function filterTable() {
     else if (currentFilter === 'avail') {
       matchFilter = row.classList.contains('found') && row.querySelector('.available');
     }
-    row.style.display = (matchSearch && matchFilter) ? '' : 'none';
+    let matchSrc = true;
+    if (currentSrc === 'queue') matchSrc = !!row.querySelector('.tag-queue');
+    else if (currentSrc === 'shuyu') matchSrc = !!row.querySelector('.tag-shuyu');
+    row.style.display = (matchSearch && matchFilter && matchSrc) ? '' : 'none';
   });
 }
 function setFilter(f, btn) {
   currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn:not(.src-btn)').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   filterTable();
 }
