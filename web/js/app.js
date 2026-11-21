@@ -283,10 +283,17 @@
       });
       state.activeSlot = -1;
       renderSlots();
+      // 静默同步远端激活槽：绝不 saveSlots/publish，否则双实例互搏成消息风暴
       var idx = activeId ? slotIndexById(activeId) : -1;
       if (idx < 0 && state.slots.length) idx = 0;
-      if (idx >= 0) activateSlot(idx);
-      console.log("[persist] 已同步服务端页签", state.slots.length, "个");
+      if (idx >= 0) {
+        state.activeSlot = idx;
+        state.temp = null;
+        state.view = "slot";
+        setView("slot");
+        renderSlots();
+      }
+      console.log("[persist] 已同步服务端页签", state.slots.length, "个，active=", state.activeSlot);
     } catch (e) { console.warn("[persist] 服务端状态解析失败", e); }
   }
 
