@@ -101,6 +101,18 @@ def _exercise_page():
         '<style>'
         'body{margin:0;background:#0d1117;color:#e6edf3;font-family:"PingFang SC","Microsoft YaHei",sans-serif;padding:16px 18px}'
         'h1{font-size:clamp(26px,3.2vw,42px);margin:4px 4px 10px;color:#f0883e}'
+        '#searchBox{width:100%;box-sizing:border-box;background:#161b22;border:2px solid #f0883e;border-radius:14px;color:#e6edf3;font-size:clamp(20px,2.4vw,32px);padding:14px 18px;outline:none;margin:6px 0 12px;font-family:inherit}'
+        '#searchBox::placeholder{color:#484f58}'
+        '#searchMeta{font-size:clamp(13px,1.4vw,17px);color:#8b949e;margin:0 4px 8px}'
+        '.srow{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:12px 14px;margin-bottom:10px}'
+        '.sname{font-size:clamp(18px,2vw,26px);font-weight:800}'
+        '.smeta{font-size:clamp(13px,1.4vw,17px);color:#8b949e;margin-top:3px}'
+        '.smuscles{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}'
+        '.sm{background:#1f6feb;color:#fff;border-radius:10px;padding:2px 10px;font-size:clamp(12px,1.3vw,16px)}'
+        '.sm2{background:#21262d;color:#8b949e;border-radius:10px;padding:2px 8px;font-size:clamp(11px,1.2vw,14px)}'
+        '.sdesc{font-size:clamp(13px,1.4vw,17px);color:#8b949e;margin-top:6px}'
+        '.sins{font-size:clamp(13px,1.4vw,17px);color:#c9d1d9;margin-top:6px;padding-left:20px}'
+        '.sins li{margin:3px 0}'
         '.tabs{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}'
         '.tab{background:#161b22;border:1px solid #30363d;color:#e6edf3;border-radius:12px;padding:10px 22px;font-size:clamp(18px,2vw,26px);cursor:pointer;font-weight:700}'
         '.tab.on{background:#f0883e;color:#0d1117;border-color:#f0883e}'
@@ -120,11 +132,14 @@ def _exercise_page():
         '.tip{font-size:clamp(14px,1.5vw,19px);color:#8b949e;margin-top:8px;text-align:left}'
         '</style></head><body>'
         '<h1>🏃 运动动作库 <span class="cnt" id="cnt"></span></h1>'
+        '<input id=searchBox type=text placeholder="🔍 搜索 6554 个动作：名称 / 肌肉 / 器械 / 部位（如：弹力带划船、股四头肌、dumbbell）" autocomplete=off>'
+        '<div id=searchMeta></div>'
+        '<div id=searchResults></div>'
         '<div class="tabs" id="tabs"></div>'
         '<div class="chips" id="chips"></div>'
         '<div class="grid" id="grid"></div>'
         '<script>'
-        'var LIB={"band": [{"n": "弹力带推胸", "n_en": "", "m": ["胸大肌"], "m2": ["肱三头肌"], "img": "band-chestpress.gif", "tip": "带绕后背固定门扣，向前推到手臂伸直，慢放"}, {"n": "弹力带划船", "n_en": "", "m": ["背阔肌"], "m2": ["肱二头肌"], "img": "band-row.gif", "tip": "双手握带，向腹部拉，肘贴身体，顶峰收缩"}, {"n": "弹力带肩推", "n_en": "", "m": ["肩前束"], "m2": ["肱三头肌"], "img": "band-press.gif", "tip": "踩稳弹力带，从肩侧向上推到头顶"}, {"n": "弹力带弯举", "n_en": "", "m": ["肱二头肌"], "m2": ["肱肌"], "img": "band-curl.gif", "tip": "上臂夹紧身体不动，只弯小臂，慢放"}, {"n": "Face pulls", "n_en": "Face pulls with yellow/green band", "m": ["背阔肌"], "m2": ["斜方肌"], "img": "wger-1732.jpg", "tip": "<p>Face pulls with band – standing horizontal pull. Grab the band at face height, pull elb"}, {"n": "rubber band glute kickback", "n_en": "rubber band glute kickback", "m": ["臀大肌"], "m2": [], "img": "wger-1613.jpg", "tip": "<p>A rubber band glute kickback is an exercise performed on hands and knees, where you anc"}, {"n": "Band Terminal Knee", "n_en": "Band Terminal Knee extension", "m": ["股四头肌"], "m2": [], "img": "wger-2494.jpg", "tip": "<p>This is an end range strengthening exercise for the knee extensors. Start by looping a "}, {"n": "弹力带侧平举", "n_en": "", "m": ["肩中束"], "m2": [], "img": null, "tip": "踩带中段，两侧平举到肩高，慢放不耸肩"}, {"n": "弹力带三头下压", "n_en": "", "m": ["肱三头肌"], "m2": [], "img": null, "tip": "门扣高位，肘贴体侧，前臂下压至伸直"}, {"n": "弹力带深蹲推举", "n_en": "", "m": ["股四头肌", "肩前束"], "m2": ["臀大肌"], "img": null, "tip": "踩带深蹲起时顺势推肩，一次练腿+肩"}, {"n": "弹力带髋外展", "n_en": "", "m": ["臀中肌"], "m2": [], "img": null, "tip": "带套双膝，侧躺或站立向侧方打开膝盖"}], "dumbbell": [{"n": "Bent High Pulls", "n_en": "Bent High Pulls", "m": ["斜方肌"], "m2": [], "img": "wger-79.jpg", "tip": "<p>Bend over slightly while holding two dumbbells.&nbsp; Pull the dumbbells up to your che"}, {"n": "Bent Over Dumbbell Rows", "n_en": "Bent Over Dumbbell Rows (Single Arm)", "m": ["背阔肌"], "m2": [], "img": "wger-81.jpg", "tip": "<p>With dumbbells in hand, bend at the hip until hands hang just below the knees (similar "}, {"n": "Biceps Curls With Dumbbell", "n_en": "Biceps Curls With Dumbbell", "m": ["肱二头肌"], "m2": ["肱肌"], "img": "wger-92.jpg", "tip": "<p>Hold two dumbbells, the arms are streched, the hands are on your side, the palms face i"}, {"n": "Dumbbell Goblet Squat", "n_en": "Dumbbell Goblet Squat", "m": ["股四头肌"], "m2": [], "img": "wger-203.jpg", "tip": "<p>Grasp dumbbell with both hands at the sides of the upper plates. Hold dumbbell in front"}, {"n": "Dumbbell Lunges Walking", "n_en": "Dumbbell Lunges Walking", "m": ["股四头肌"], "m2": ["臀大肌"], "img": "wger-206.jpg", "tip": "<ul> <li><strong>Starting Position:</strong> Stand with feet hip-width apart and hands eit"}, {"n": "Front Raises", "n_en": "Front Raises", "m": ["肩前束"], "m2": [], "img": "wger-256.jpg", "tip": "<p>To execute the exercise, the lifter stands with their feet shoulder width apart and wei"}, {"n": "Dumbbell Hang Power Cleans", "n_en": "Dumbbell Hang Power Cleans", "m": ["股二头肌", "臀大肌"], "m2": ["腓肠肌", "股四头肌", "斜方肌"], "img": "wger-1087.jpg", "tip": "<p>On your feet, stand tall with your dumbbells, holding them at your sides. Hinge at the "}, {"n": "Side bend", "n_en": "Side bend", "m": ["腹外斜肌"], "m2": ["腹直肌"], "img": "wger-1188.jpg", "tip": "<p>With a weight in one hand, extend that arm down and bend the other arm, resting your ha"}, {"n": "站姿哑铃推举", "n_en": "", "m": ["肩前束", "肩中束"], "m2": ["肱三头肌"], "img": null, "tip": "哑铃举肩两侧，向上推至头顶再慢放"}, {"n": "哑铃罗马尼亚硬拉", "n_en": "", "m": ["股二头肌", "臀大肌"], "m2": ["竖脊肌"], "img": null, "tip": "膝微屈，髋部后推，哑铃沿小腿下放至膝下"}, {"n": "哑铃颈后臂屈伸", "n_en": "", "m": ["肱三头肌"], "m2": [], "img": null, "tip": "双手合握哑铃举过头顶，前臂后屈再伸直"}, {"n": "哑铃地板卧推", "n_en": "", "m": ["胸大肌"], "m2": ["肱三头肌"], "img": null, "tip": "平躺地板，哑铃从胸侧向上推，全程控制"}], "bodyweight": [{"n": "上斜俯卧撑", "n_en": "", "m": ["胸大肌", "肱三头肌"], "m2": ["肩前束"], "img": "pushup.gif", "tip": "手撑桌沿/床边，身体一条线下压再推起"}, {"n": "仰卧起坐", "n_en": "", "m": ["腹直肌"], "m2": ["髋屈肌"], "img": "situp.gif", "tip": "起时呼气，躺下吸气，腰始终贴地"}, {"n": "卷腹", "n_en": "", "m": ["腹直肌"], "m2": [], "img": "crunch.gif", "tip": "腰部贴地，只卷起肩胛，脖子放松"}, {"n": "相扑深蹲", "n_en": "", "m": ["股四头肌", "臀大肌"], "m2": [], "img": "squat.gif", "tip": "宽距站脚尖外展，下蹲至大腿平行"}, {"n": "Plank", "n_en": "Plank", "m": ["腹外斜肌", "腹直肌"], "m2": ["肱二头肌", "股四头肌", "肱三头肌"], "img": "wger-458.jpg", "tip": "<p>起始姿势：</p> <ol> <li>四肢着地。手臂弯曲成直角，肩部应该正好在肘部上方。背部挺直，整个身体在一条直线上。</li> </ol> <p>步骤：</p> <ol>"}, {"n": "Pike Push Ups", "n_en": "Pike Push Ups", "m": ["胸大肌"], "m2": ["肱三头肌"], "img": "wger-454.jpg", "tip": "<p>起始姿势：下犬式：身体成V字形，背部、手臂和腿部挺直，臀部翘在空中。您可以先做高位平板支撑的姿势，然后将双手向后移来形成这个姿势。</p> <p>步骤：</p> <ol> <"}, {"n": "Close-grip Press-ups", "n_en": "Close-grip Press-ups", "m": ["肱肌", "背阔肌", "胸大肌", "斜方肌"], "m2": ["肩前束", "肱二头肌", "肱三头肌"], "img": "wger-1086.jpg", "tip": "<p>Drop into a strong plank position, bringing your hands close together until they are alm"}, {"n": "Quadriped Arm", "n_en": "Quadriped Arm and Leg Raise", "m": ["肩前束", "臀大肌", "前锯肌", "斜方肌"], "m2": ["背阔肌"], "img": "wger-957.jpg", "tip": "<p>In this exercise, the back muscles and the muscles of the back of the leg and back of t"}, {"n": "Shoulder Shrug", "n_en": "Shoulder Shrug", "m": ["斜方肌"], "m2": [], "img": "wger-570.jpg", "tip": "<p>起始位置：坐位或站位，背部挺直。</p> <p>步骤：</p> <ol> <li>将肩膀尽可能地向上抬起，保持 5 秒。</li> <li>肩膀回到放松的位置。</li> <"}, {"n": "箭步蹲", "n_en": "", "m": ["股四头肌", "臀大肌"], "m2": [], "img": null, "tip": "大步前后开立，双膝屈曲至后腿近地"}, {"n": "臀桥", "n_en": "", "m": ["臀大肌", "股二头肌"], "m2": ["竖脊肌"], "img": null, "tip": "仰卧屈膝，臀部发力抬髋至肩髋膝一线"}, {"n": "仰卧举腿", "n_en": "", "m": ["腹直肌"], "m2": [], "img": null, "tip": "仰卧，双腿并拢抬至垂直，慢放不触地"}, {"n": "波比跳", "n_en": "", "m": ["股四头肌", "胸大肌", "三角肌"], "m2": [], "img": null, "tip": "下蹲-后跳平板-俯卧撑-前跳-纵跳，循环"}]};'
+        'var LIB=null;fetch("exercise-lib.json").then(function(r){return r.json();}).then(function(d){LIB=d;render();});'
         'var KEYS=[["band","🎗️ 弹力带"],["dumbbell","🏋️ 哑铃"],["bodyweight","🤸 无器材"]];'
         'var cur="band",flt="";'
         'function render(){'
@@ -138,14 +153,36 @@ def _exercise_page():
         'document.getElementById("cnt").textContent=list.length+" 个动作";'
         'var g=document.getElementById("grid");g.innerHTML="";'
         'list.forEach(function(x){'
-        'var img=x.img?(`<img src="/poster/exercise/${x.img}" loading=lazy>`):"<div class=noimg>🏋️</div>";'
+        'var img=x.img?(`<img src="exercise/${x.img}" loading=lazy>`):"<div class=noimg>🏋️</div>";'
         'var ms=x.m.map(function(m){return "<span class=m>"+m+"</span>";}).join("");'
         'var m2=x.m2.map(function(m){return "<span class=m2>"+m+"</span>";}).join("");'
         'var ne=x.n_en?"<div class=nen>"+x.n_en+"</div>":"";'
         'g.innerHTML+="<div class=card>"+img+"<div class=name>"+x.n+"</div>"+ne'
         '+"<div class=muscles>"+ms+m2+"</div>"'
         '+(x.tip?"<div class=tip>"+x.tip+"</div>":"")+"</div>";});}'
-        'render();'
+        'var DB=null,dbLoading=false,st=null;'
+        'function loadDB(cb){if(DB)return cb();if(dbLoading)return;dbLoading=true;'
+        'document.getElementById("searchMeta").textContent="正在加载动作数据库…";'
+        'fetch("exercise-db.json").then(function(r){return r.json();}).then(function(d){DB=d.rows;'
+        'document.getElementById("searchMeta").textContent="";cb();}).catch(function(){'
+        'document.getElementById("searchMeta").textContent="数据库加载失败";});}'
+        'document.getElementById("searchBox").addEventListener("input",function(e){'
+        'var q=e.target.value.trim();clearTimeout(st);'
+        'if(!q){document.getElementById("searchResults").innerHTML="";document.getElementById("searchMeta").textContent="";return;}'
+        'st=setTimeout(function(){loadDB(function(){doSearch(q);});},250);});'
+        'function doSearch(q){var ql=q.toLowerCase();var hits=[];'
+        'for(var i=0;i<DB.length;i++){var r=DB[i];'
+        'if((r[1]&&r[1].toLowerCase().indexOf(ql)>=0)||(r[2]&&r[2].toLowerCase().indexOf(ql)>=0)'
+        '||(r[3]&&r[3].indexOf(q)>=0)||(r[4]&&r[4].indexOf(q)>=0)'
+        '||(r[5]&&r[5].indexOf(q)>=0)||(r[6]&&r[6].join(" ").indexOf(q)>=0)){hits.push(r);if(hits.length>=80)break;}}'
+        'document.getElementById("searchMeta").textContent="命中 "+hits.length+" 个动作"+(hits.length>=80?"（最多显示80）":"");'
+        'var html="";'
+        'hits.forEach(function(r){var sec=r[6].map(function(m){return "<span class=sm2>"+m+"</span>";}).join("");'
+        'var ins=r[8].map(function(s){return "<li>"+s+"</li>";}).join("");'
+        'html+="<div class=srow><div class=sname>"+(r[1]||r[2])+"</div><div class=smeta>"+r[3]+" · "+r[4]+(r[2]&&r[1]?" · "+r[2]:"")+"</div>"'
+        '+"<div class=smuscles><span class=sm>"+(r[5]||"未标注")+"</span>"+sec+"</div>"'
+        '+(r[7]?"<div class=sdesc>"+r[7]+"</div>":"")+(ins?"<ol class=sins>"+ins+"</ol>":"")+"</div>";});'
+        'document.getElementById("searchResults").innerHTML=html;}'
         '</script></body></html>'
     )
 
@@ -395,6 +432,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, "missing path", "text/plain; charset=utf-8")
                 return
             self._serve_file(path)
+        elif u.path in ("/exercise-lib.json", "/exercise-db.json"):
+            fn = "exercise_lib.json" if u.path == "/exercise-lib.json" else "exercise_db.json"
+            p = os.path.join(os.path.dirname(os.path.abspath(__file__)), fn)
+            if os.path.exists(p):
+                with open(p, "rb") as f:
+                    self._send(200, f.read(), "application/json; charset=utf-8")
+            else:
+                self._send(404, "not found")
         elif u.path == "/exercise":
             # 运动动作库页（常驻页签用）：GIF 网格 + 组数提示
             self._send(200, EXERCISE_PAGE)
