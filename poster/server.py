@@ -92,44 +92,61 @@ def get_file(path):
 
 
 # ---------------- 运动动作库页（常驻页签） ----------------
-EXERCISES = [
-    ("上斜俯卧撑",   "胸",   "pushup.gif",          "3 组 × 10-8-8 次",   "身体一条线，下去吸气、推起呼气"),
-    ("弹力带推胸",   "胸",   "band-chestpress.gif", "3 组 × 12 次",       "带绕后背，向前推到手臂伸直"),
-    ("弹力带划船",   "背",   "band-row.gif",        "3 组 × 12 次",       "坐直，向腹部拉，感受背部发力"),
-    ("弹力带肩推",   "肩",   "band-press.gif",      "3 组 × 12 次",       "踩稳弹力带，向上推到头顶"),
-    ("弹力带弯举",   "手臂", "band-curl.gif",       "3 组 × 15 次",       "上臂夹紧身体，只弯小臂"),
-    ("卷腹",         "腹",   "crunch.gif",          "3 组 × 15 次",       "腰部贴地，只卷起肩胛"),
-    ("仰卧起坐",     "腹",   "situp.gif",           "3 组 × 12 次",       "起来呼气，躺下吸气"),
-    ("相扑深蹲",     "腿",   "squat.gif",           "3 组 × 15 次",       "宽距站，膝盖对准脚尖"),
-    ("平板支撑",     "核心", None,                  "3 组 × 30-60 秒",    "前臂撑地，头到脚一条直线"),
-]
+# 数据来源：wger.de 开源健身数据库（CC 授权）+ 本地 GIF + 经典动作自填
 
 def _exercise_page():
-    cards = []
-    for name, part, gif, dose, tip in EXERCISES:
-        img = f'<img src="/poster/exercise/{gif}" loading="lazy">' if gif else '<div class="noimg">⏱</div>'
-        cards.append(
-            f'<div class="card"><div class="part">{part}</div>{img}'
-            f'<div class="name">{name}</div><div class="dose">{dose}</div>'
-            f'<div class="tip">{tip}</div></div>'
-        )
     return (
         '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1"><title>运动动作库</title>'
         '<style>'
-        'body{margin:0;background:#0d1117;color:#e6edf3;font-family:"PingFang SC","Microsoft YaHei",sans-serif;padding:18px}'
-        'h1{font-size:clamp(28px,3.4vw,44px);margin:6px 4px 16px;color:#f0883e}'
-        '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}'
-        '.card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px;text-align:center}'
-        '.part{float:right;font-size:22px;color:#3fb950;font-weight:700}'
-        'img{width:100%;max-height:34vh;object-fit:contain;border-radius:10px;background:#000}'
-        '.noimg{font-size:80px;line-height:180px}'
-        '.name{font-size:clamp(24px,2.6vw,34px);font-weight:800;margin-top:8px}'
-        '.dose{font-size:clamp(20px,2.2vw,28px);color:#3fb950;font-weight:700;margin-top:4px}'
-        '.tip{font-size:clamp(15px,1.6vw,20px);color:#8b949e;margin-top:4px}'
-        '</style></head><body><h1>🏃 运动动作库</h1><div class="grid">'
-        + "".join(cards) +
-        '</div></body></html>'
+        'body{margin:0;background:#0d1117;color:#e6edf3;font-family:"PingFang SC","Microsoft YaHei",sans-serif;padding:16px 18px}'
+        'h1{font-size:clamp(26px,3.2vw,42px);margin:4px 4px 10px;color:#f0883e}'
+        '.tabs{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}'
+        '.tab{background:#161b22;border:1px solid #30363d;color:#e6edf3;border-radius:12px;padding:10px 22px;font-size:clamp(18px,2vw,26px);cursor:pointer;font-weight:700}'
+        '.tab.on{background:#f0883e;color:#0d1117;border-color:#f0883e}'
+        '.chips{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}'
+        '.chip{background:#21262d;border:1px solid #30363d;color:#8b949e;border-radius:20px;padding:5px 14px;font-size:clamp(14px,1.5vw,19px);cursor:pointer}'
+        '.chip.on{background:#238636;color:#fff;border-color:#238636}'
+        '.cnt{color:#8b949e;font-size:clamp(14px,1.5vw,18px);margin-left:auto}'
+        '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}'
+        '.card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:12px;text-align:center}'
+        'img{width:100%;max-height:30vh;object-fit:contain;border-radius:10px;background:#000}'
+        '.noimg{font-size:64px;line-height:150px;background:#0d1117;border-radius:10px}'
+        '.name{font-size:clamp(20px,2.2vw,30px);font-weight:800;margin-top:8px}'
+        '.nen{font-size:clamp(13px,1.3vw,16px);color:#484f58;margin-top:2px}'
+        '.muscles{margin-top:6px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}'
+        '.m{background:#238636;color:#fff;border-radius:12px;padding:3px 12px;font-size:clamp(14px,1.4vw,18px);font-weight:700}'
+        '.m2{background:#21262d;color:#8b949e;border-radius:12px;padding:3px 10px;font-size:clamp(12px,1.2vw,15px)}'
+        '.tip{font-size:clamp(14px,1.5vw,19px);color:#8b949e;margin-top:8px;text-align:left}'
+        '</style></head><body>'
+        '<h1>🏃 运动动作库 <span class="cnt" id="cnt"></span></h1>'
+        '<div class="tabs" id="tabs"></div>'
+        '<div class="chips" id="chips"></div>'
+        '<div class="grid" id="grid"></div>'
+        '<script>'
+        'var LIB={"band": [{"n": "弹力带推胸", "n_en": "", "m": ["胸大肌"], "m2": ["肱三头肌"], "img": "band-chestpress.gif", "tip": "带绕后背固定门扣，向前推到手臂伸直，慢放"}, {"n": "弹力带划船", "n_en": "", "m": ["背阔肌"], "m2": ["肱二头肌"], "img": "band-row.gif", "tip": "双手握带，向腹部拉，肘贴身体，顶峰收缩"}, {"n": "弹力带肩推", "n_en": "", "m": ["肩前束"], "m2": ["肱三头肌"], "img": "band-press.gif", "tip": "踩稳弹力带，从肩侧向上推到头顶"}, {"n": "弹力带弯举", "n_en": "", "m": ["肱二头肌"], "m2": ["肱肌"], "img": "band-curl.gif", "tip": "上臂夹紧身体不动，只弯小臂，慢放"}, {"n": "Face pulls", "n_en": "Face pulls with yellow/green band", "m": ["背阔肌"], "m2": ["斜方肌"], "img": "wger-1732.jpg", "tip": "<p>Face pulls with band – standing horizontal pull. Grab the band at face height, pull elb"}, {"n": "rubber band glute kickback", "n_en": "rubber band glute kickback", "m": ["臀大肌"], "m2": [], "img": "wger-1613.jpg", "tip": "<p>A rubber band glute kickback is an exercise performed on hands and knees, where you anc"}, {"n": "Band Terminal Knee", "n_en": "Band Terminal Knee extension", "m": ["股四头肌"], "m2": [], "img": "wger-2494.jpg", "tip": "<p>This is an end range strengthening exercise for the knee extensors. Start by looping a "}, {"n": "弹力带侧平举", "n_en": "", "m": ["肩中束"], "m2": [], "img": null, "tip": "踩带中段，两侧平举到肩高，慢放不耸肩"}, {"n": "弹力带三头下压", "n_en": "", "m": ["肱三头肌"], "m2": [], "img": null, "tip": "门扣高位，肘贴体侧，前臂下压至伸直"}, {"n": "弹力带深蹲推举", "n_en": "", "m": ["股四头肌", "肩前束"], "m2": ["臀大肌"], "img": null, "tip": "踩带深蹲起时顺势推肩，一次练腿+肩"}, {"n": "弹力带髋外展", "n_en": "", "m": ["臀中肌"], "m2": [], "img": null, "tip": "带套双膝，侧躺或站立向侧方打开膝盖"}], "dumbbell": [{"n": "Bent High Pulls", "n_en": "Bent High Pulls", "m": ["斜方肌"], "m2": [], "img": "wger-79.jpg", "tip": "<p>Bend over slightly while holding two dumbbells.&nbsp; Pull the dumbbells up to your che"}, {"n": "Bent Over Dumbbell Rows", "n_en": "Bent Over Dumbbell Rows (Single Arm)", "m": ["背阔肌"], "m2": [], "img": "wger-81.jpg", "tip": "<p>With dumbbells in hand, bend at the hip until hands hang just below the knees (similar "}, {"n": "Biceps Curls With Dumbbell", "n_en": "Biceps Curls With Dumbbell", "m": ["肱二头肌"], "m2": ["肱肌"], "img": "wger-92.jpg", "tip": "<p>Hold two dumbbells, the arms are streched, the hands are on your side, the palms face i"}, {"n": "Dumbbell Goblet Squat", "n_en": "Dumbbell Goblet Squat", "m": ["股四头肌"], "m2": [], "img": "wger-203.jpg", "tip": "<p>Grasp dumbbell with both hands at the sides of the upper plates. Hold dumbbell in front"}, {"n": "Dumbbell Lunges Walking", "n_en": "Dumbbell Lunges Walking", "m": ["股四头肌"], "m2": ["臀大肌"], "img": "wger-206.jpg", "tip": "<ul> <li><strong>Starting Position:</strong> Stand with feet hip-width apart and hands eit"}, {"n": "Front Raises", "n_en": "Front Raises", "m": ["肩前束"], "m2": [], "img": "wger-256.jpg", "tip": "<p>To execute the exercise, the lifter stands with their feet shoulder width apart and wei"}, {"n": "Dumbbell Hang Power Cleans", "n_en": "Dumbbell Hang Power Cleans", "m": ["股二头肌", "臀大肌"], "m2": ["腓肠肌", "股四头肌", "斜方肌"], "img": "wger-1087.jpg", "tip": "<p>On your feet, stand tall with your dumbbells, holding them at your sides. Hinge at the "}, {"n": "Side bend", "n_en": "Side bend", "m": ["腹外斜肌"], "m2": ["腹直肌"], "img": "wger-1188.jpg", "tip": "<p>With a weight in one hand, extend that arm down and bend the other arm, resting your ha"}, {"n": "站姿哑铃推举", "n_en": "", "m": ["肩前束", "肩中束"], "m2": ["肱三头肌"], "img": null, "tip": "哑铃举肩两侧，向上推至头顶再慢放"}, {"n": "哑铃罗马尼亚硬拉", "n_en": "", "m": ["股二头肌", "臀大肌"], "m2": ["竖脊肌"], "img": null, "tip": "膝微屈，髋部后推，哑铃沿小腿下放至膝下"}, {"n": "哑铃颈后臂屈伸", "n_en": "", "m": ["肱三头肌"], "m2": [], "img": null, "tip": "双手合握哑铃举过头顶，前臂后屈再伸直"}, {"n": "哑铃地板卧推", "n_en": "", "m": ["胸大肌"], "m2": ["肱三头肌"], "img": null, "tip": "平躺地板，哑铃从胸侧向上推，全程控制"}], "bodyweight": [{"n": "上斜俯卧撑", "n_en": "", "m": ["胸大肌", "肱三头肌"], "m2": ["肩前束"], "img": "pushup.gif", "tip": "手撑桌沿/床边，身体一条线下压再推起"}, {"n": "仰卧起坐", "n_en": "", "m": ["腹直肌"], "m2": ["髋屈肌"], "img": "situp.gif", "tip": "起时呼气，躺下吸气，腰始终贴地"}, {"n": "卷腹", "n_en": "", "m": ["腹直肌"], "m2": [], "img": "crunch.gif", "tip": "腰部贴地，只卷起肩胛，脖子放松"}, {"n": "相扑深蹲", "n_en": "", "m": ["股四头肌", "臀大肌"], "m2": [], "img": "squat.gif", "tip": "宽距站脚尖外展，下蹲至大腿平行"}, {"n": "Plank", "n_en": "Plank", "m": ["腹外斜肌", "腹直肌"], "m2": ["肱二头肌", "股四头肌", "肱三头肌"], "img": "wger-458.jpg", "tip": "<p>起始姿势：</p> <ol> <li>四肢着地。手臂弯曲成直角，肩部应该正好在肘部上方。背部挺直，整个身体在一条直线上。</li> </ol> <p>步骤：</p> <ol>"}, {"n": "Pike Push Ups", "n_en": "Pike Push Ups", "m": ["胸大肌"], "m2": ["肱三头肌"], "img": "wger-454.jpg", "tip": "<p>起始姿势：下犬式：身体成V字形，背部、手臂和腿部挺直，臀部翘在空中。您可以先做高位平板支撑的姿势，然后将双手向后移来形成这个姿势。</p> <p>步骤：</p> <ol> <"}, {"n": "Close-grip Press-ups", "n_en": "Close-grip Press-ups", "m": ["肱肌", "背阔肌", "胸大肌", "斜方肌"], "m2": ["肩前束", "肱二头肌", "肱三头肌"], "img": "wger-1086.jpg", "tip": "<p>Drop into a strong plank position, bringing your hands close together until they are alm"}, {"n": "Quadriped Arm", "n_en": "Quadriped Arm and Leg Raise", "m": ["肩前束", "臀大肌", "前锯肌", "斜方肌"], "m2": ["背阔肌"], "img": "wger-957.jpg", "tip": "<p>In this exercise, the back muscles and the muscles of the back of the leg and back of t"}, {"n": "Shoulder Shrug", "n_en": "Shoulder Shrug", "m": ["斜方肌"], "m2": [], "img": "wger-570.jpg", "tip": "<p>起始位置：坐位或站位，背部挺直。</p> <p>步骤：</p> <ol> <li>将肩膀尽可能地向上抬起，保持 5 秒。</li> <li>肩膀回到放松的位置。</li> <"}, {"n": "箭步蹲", "n_en": "", "m": ["股四头肌", "臀大肌"], "m2": [], "img": null, "tip": "大步前后开立，双膝屈曲至后腿近地"}, {"n": "臀桥", "n_en": "", "m": ["臀大肌", "股二头肌"], "m2": ["竖脊肌"], "img": null, "tip": "仰卧屈膝，臀部发力抬髋至肩髋膝一线"}, {"n": "仰卧举腿", "n_en": "", "m": ["腹直肌"], "m2": [], "img": null, "tip": "仰卧，双腿并拢抬至垂直，慢放不触地"}, {"n": "波比跳", "n_en": "", "m": ["股四头肌", "胸大肌", "三角肌"], "m2": [], "img": null, "tip": "下蹲-后跳平板-俯卧撑-前跳-纵跳，循环"}]};'
+        'var KEYS=[["band","🎗️ 弹力带"],["dumbbell","🏋️ 哑铃"],["bodyweight","🤸 无器材"]];'
+        'var cur="band",flt="";'
+        'function render(){'
+        'var t=document.getElementById("tabs");t.innerHTML="";'
+        'KEYS.forEach(function(k){var b=document.createElement("div");b.className="tab"+(cur===k[0]?" on":"");b.textContent=k[1];b.onclick=function(){cur=k[0];flt="";render();};t.appendChild(b);});'
+        'var parts=[];LIB[cur].forEach(function(x){x.m.forEach(function(m){if(parts.indexOf(m)<0)parts.push(m);});});'
+        'var c=document.getElementById("chips");c.innerHTML="";'
+        'var all=document.createElement("div");all.className="chip"+(flt?"":" on");all.textContent="全部";all.onclick=function(){flt="";render();};c.appendChild(all);'
+        'parts.forEach(function(p){var d=document.createElement("div");d.className="chip"+(flt===p?" on":"");d.textContent=p;d.onclick=function(){flt=flt===p?"":p;render();};c.appendChild(d);});'
+        'var list=LIB[cur].filter(function(x){return !flt||x.m.indexOf(flt)>=0;});'
+        'document.getElementById("cnt").textContent=list.length+" 个动作";'
+        'var g=document.getElementById("grid");g.innerHTML="";'
+        'list.forEach(function(x){'
+        'var img=x.img?("<img src=\"/poster/exercise/"+x.img+"\" loading=lazy>"):"<div class=noimg>🏋️</div>";'
+        'var ms=x.m.map(function(m){return "<span class=m>"+m+"</span>";}).join("");'
+        'var m2=x.m2.map(function(m){return "<span class=m2>"+m+"</span>";}).join("");'
+        'var ne=x.n_en?"<div class=nen>"+x.n_en+"</div>":"";'
+        'g.innerHTML+="<div class=card>"+img+"<div class=name>"+x.n+"</div>"+ne'
+        +'"<div class=muscles>"+ms+m2+"</div>"'
+        '+(x.tip?"<div class=tip>"+x.tip+"</div>":"")+"</div>";});}'
+        'render();'
+        '</script></body></html>'
     )
 
 EXERCISE_PAGE = _exercise_page()
