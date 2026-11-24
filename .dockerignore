@@ -3,6 +3,5 @@
 docs
 skills
 .env
-web/js/config.js
 **/.DS_Store
 **/__pycache__
