@@ -12,6 +12,9 @@ FROM docker.m.daocloud.io/library/nginx:alpine
 COPY docker/gen-config.sh /docker-entrypoint.d/99-tianluo-config.sh
 RUN chmod +x /docker-entrypoint.d/99-tianluo-config.sh
 
+# 自定义 nginx 配置：index.html 禁缓存 + 静态资源长缓存
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
 COPY web/ /usr/share/nginx/html/
 
 EXPOSE 80
