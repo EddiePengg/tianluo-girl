@@ -113,6 +113,18 @@ def _exercise_page():
         '.sdesc{font-size:clamp(13px,1.4vw,17px);color:#8b949e;margin-top:6px}'
         '.sins{font-size:clamp(13px,1.4vw,17px);color:#c9d1d9;margin-top:6px;padding-left:20px}'
         '.sins li{margin:3px 0}'
+        '.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}'
+        '.scard{background:linear-gradient(165deg,#161b22,#0b0e13);border:1px solid #30363d;border-radius:16px;overflow:hidden;transition:border-color .15s,transform .15s}'
+        '.scard:hover{border-color:#f0883e;transform:translateY(-2px)}'
+        '.svideo{position:relative;background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #30363d}'
+        '.svideo video{width:100%;height:100%;object-fit:contain}'
+        '.svideo .ph{font-size:60px;opacity:.4}'
+        '.sbody{padding:12px 14px 14px}'
+        '.stag{display:inline-block;background:#21262d;color:#8b949e;border-radius:8px;padding:3px 9px;font-size:clamp(11px,1.1vw,13px);margin:0 6px 4px 0}'
+        '.sins{max-height:72px;overflow:hidden;position:relative;cursor:pointer;margin:8px 0 0}'
+        '.sins:not(.open)::after{content:"点击展开全部步骤 ▾";position:absolute;bottom:0;left:0;right:0;padding:14px 0 2px;text-align:center;font-size:12px;color:#f0883e;background:linear-gradient(transparent,#0b0e13 60%)}'
+        '.sins.open{max-height:none;cursor:default}'
+        '.sins.open::after{content:""}'
         '.tabs{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}'
         '.tab{background:#161b22;border:1px solid #30363d;color:#e6edf3;border-radius:12px;padding:10px 22px;font-size:clamp(18px,2vw,26px);cursor:pointer;font-weight:700}'
         '.tab.on{background:#f0883e;color:#0d1117;border-color:#f0883e}'
@@ -174,16 +186,27 @@ def _exercise_page():
         'for(var i=0;i<DB.length;i++){var r=DB[i];'
         'if((r[1]&&r[1].toLowerCase().indexOf(ql)>=0)||(r[2]&&r[2].toLowerCase().indexOf(ql)>=0)'
         '||(r[3]&&r[3].indexOf(q)>=0)||(r[4]&&r[4].indexOf(q)>=0)'
-        '||(r[5]&&r[5].indexOf(q)>=0)||(r[6]&&r[6].join(" ").indexOf(q)>=0)){hits.push(r);if(hits.length>=80)break;}}'
-        'document.getElementById("searchMeta").textContent="命中 "+hits.length+" 个动作"+(hits.length>=80?"（最多显示80）":"");'
+        '||(r[5]&&r[5].indexOf(q)>=0)||(r[6]&&r[6].join(" ").indexOf(q)>=0)){hits.push(r);if(hits.length>=40)break;}}'
+        'document.getElementById("searchMeta").textContent="命中 "+hits.length+" 个动作"+(hits.length>=40?"（最多显示40）":"");'
+        'var g=document.getElementById("searchResults");g.className="sgrid";'
         'var html="";'
-        'hits.forEach(function(r){var sec=r[6].map(function(m){return "<span class=sm2>"+m+"</span>";}).join("");'
+        'hits.forEach(function(r){'
+        'var vid=r[9]?"<div class=svideo><video src=exercise/"+r[0]+".mp4 muted loop playsinline preload=none></video></div>":"<div class=svideo><div class=ph>🏋️</div></div>";'
+        'var sec=r[6].map(function(m){return "<span class=sm2>"+m+"</span>";}).join("");'
         'var ins=r[8].map(function(s){return "<li>"+s+"</li>";}).join("");'
-        'html+="<div class=srow><div class=sname>"+(r[1]||r[2])+"</div><div class=smeta>"+r[3]+" · "+r[4]+(r[2]&&r[1]?" · "+r[2]:"")+"</div>"'
+        'html+="<div class=scard>"+vid+"<div class=sbody>"'
+        '+"<div class=sname>"+(r[1]||r[2])+"</div>"'
+        '+(r[2]&&r[1]?"<div class=nen>"+r[2]+"</div>":"")'
+        '+"<div><span class=stag>"+r[3]+"</span><span class=stag>"+r[4]+"</span></div>"'
         '+"<div class=smuscles><span class=sm>"+(r[5]||"未标注")+"</span>"+sec+"</div>"'
-        '+(r[7]?"<div class=sdesc>"+r[7]+"</div>":"")+(ins?"<ol class=sins>"+ins+"</ol>":"")+"</div>";});'
-        'document.getElementById("searchResults").innerHTML=html;}'
+        '+(r[7]?"<div class=sdesc>"+r[7]+"</div>":"")'
+        '+(ins?"<ol class=sins>"+ins+"</ol>":"")'
+        '+"</div></div>";});'
+        'g.innerHTML=html;'
+        'var io=new IntersectionObserver(function(es){es.forEach(function(en){var v=en.target;if(en.isIntersecting){v.play().catch(function(){});}else{v.pause();}});},{rootMargin:"150px"});'
+        'document.querySelectorAll("#searchResults video").forEach(function(v){io.observe(v);v.addEventListener("error",function(){var p=v.parentNode;p.innerHTML="<div class=ph>🏋️</div>";});});}'
         '</script></body></html>'
+        "document.querySelectorAll("#searchResults .sins").forEach(function(o){o.addEventListener("click",function(){o.classList.toggle("open");});});"
     )
 
 EXERCISE_PAGE = _exercise_page()
@@ -450,7 +473,14 @@ class Handler(BaseHTTPRequestHandler):
             if os.path.isfile(fp):
                 with open(fp, "rb") as fh:
                     data = fh.read()
-                self._send(200, data, "image/gif")
+                low = name.lower()
+                if low.endswith(".mp4"):
+                    ctype = "video/mp4"
+                elif low.endswith((".jpg", ".jpeg")):
+                    ctype = "image/jpeg"
+                else:
+                    ctype = "image/gif"
+                self._send(200, data, ctype)
             else:
                 self._send(404, "not found", "text/plain; charset=utf-8")
         elif u.path.startswith("/web/"):
