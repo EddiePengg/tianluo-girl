@@ -91,7 +91,50 @@ def get_file(path):
     return local, None
 
 
-# ---------------- 页面 ----------------
+# ---------------- 运动动作库页（常驻页签） ----------------
+EXERCISES = [
+    ("上斜俯卧撑",   "胸",   "pushup.gif",          "3 组 × 10-8-8 次",   "身体一条线，下去吸气、推起呼气"),
+    ("弹力带推胸",   "胸",   "band-chestpress.gif", "3 组 × 12 次",       "带绕后背，向前推到手臂伸直"),
+    ("弹力带划船",   "背",   "band-row.gif",        "3 组 × 12 次",       "坐直，向腹部拉，感受背部发力"),
+    ("弹力带肩推",   "肩",   "band-press.gif",      "3 组 × 12 次",       "踩稳弹力带，向上推到头顶"),
+    ("弹力带弯举",   "手臂", "band-curl.gif",       "3 组 × 15 次",       "上臂夹紧身体，只弯小臂"),
+    ("卷腹",         "腹",   "crunch.gif",          "3 组 × 15 次",       "腰部贴地，只卷起肩胛"),
+    ("仰卧起坐",     "腹",   "situp.gif",           "3 组 × 12 次",       "起来呼气，躺下吸气"),
+    ("相扑深蹲",     "腿",   "squat.gif",           "3 组 × 15 次",       "宽距站，膝盖对准脚尖"),
+    ("平板支撑",     "核心", None,                  "3 组 × 30-60 秒",    "前臂撑地，头到脚一条直线"),
+]
+
+def _exercise_page():
+    cards = []
+    for name, part, gif, dose, tip in EXERCISES:
+        img = f'<img src="/poster/exercise/{gif}" loading="lazy">' if gif else '<div class="noimg">⏱</div>'
+        cards.append(
+            f'<div class="card"><div class="part">{part}</div>{img}'
+            f'<div class="name">{name}</div><div class="dose">{dose}</div>'
+            f'<div class="tip">{tip}</div></div>'
+        )
+    return (
+        '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1"><title>运动动作库</title>'
+        '<style>'
+        'body{margin:0;background:#0d1117;color:#e6edf3;font-family:"PingFang SC","Microsoft YaHei",sans-serif;padding:18px}'
+        'h1{font-size:clamp(28px,3.4vw,44px);margin:6px 4px 16px;color:#f0883e}'
+        '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}'
+        '.card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px;text-align:center}'
+        '.part{float:right;font-size:22px;color:#3fb950;font-weight:700}'
+        'img{width:100%;max-height:34vh;object-fit:contain;border-radius:10px;background:#000}'
+        '.noimg{font-size:80px;line-height:180px}'
+        '.name{font-size:clamp(24px,2.6vw,34px);font-weight:800;margin-top:8px}'
+        '.dose{font-size:clamp(20px,2.2vw,28px);color:#3fb950;font-weight:700;margin-top:4px}'
+        '.tip{font-size:clamp(15px,1.6vw,20px);color:#8b949e;margin-top:4px}'
+        '</style></head><body><h1>🏃 运动动作库</h1><div class="grid">'
+        + "".join(cards) +
+        '</div></body></html>'
+    )
+
+EXERCISE_PAGE = _exercise_page()
+
+
 PAGE = """<!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -335,6 +378,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, "missing path", "text/plain; charset=utf-8")
                 return
             self._serve_file(path)
+        elif u.path == "/exercise":
+            # 运动动作库页（常驻页签用）：GIF 网格 + 组数提示
+            self._send(200, EXERCISE_PAGE)
         elif u.path.startswith("/exercise/"):
             # 健身 GIF 静态目录：本地 cache/exercise/ 直读，不走 NocoDB
             name = os.path.basename(u.path)   # basename 防路径穿越
