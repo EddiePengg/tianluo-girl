@@ -17,10 +17,11 @@ html, body {
   align-items: center; justify-content: center;
 }
 
-/* 连接徽标 */
+/* 连接徽标：固定在页签栏底部，不悬浮、不遮挡 iframe 内容 */
 .badge {
-  position: absolute; top: 16px; right: 20px; z-index: 90;
-  font-size: 14px; padding: 4px 10px; border-radius: 4px;
+  position: static; margin: 6px auto 10px;
+  font-size: 12px; padding: 4px 8px; border-radius: 4px;
+  white-space: nowrap; align-self: center;
   color: #8b949e; background: #161b22; border: 1px solid #30363d;
 }
 .badge-on  { color: #3fb950; border-color: #238636; }
@@ -74,11 +75,11 @@ html, body {
 #slot-bar {
   position: absolute; left: 0; top: 0; bottom: 0; width: 110px; z-index: 95;
   background: rgba(13,17,23,.95); border-right: 1px solid #30363d;
-  display: flex;
+  display: flex; flex-direction: column;
 }
 #slot-list {
   display: flex; flex-direction: column; justify-content: flex-start;
-  gap: 12px; width: 100%; padding: 12px 8px;
+  gap: 12px; width: 100%; padding: 12px 8px; flex: 1;
   overflow-y: auto; overflow-x: hidden;
 }
 .slot-btn {
@@ -179,8 +180,8 @@ html, body {
   #speak-bar { bottom: 88px; font-size: 20px; }
   #listen-bar { font-size: 18px; padding: 12px; }
 
-  /* 连接徽标 */
-  .badge { top: 10px; right: 12px; font-size: 12px; }
+  /* 连接徽标：手机底栏空间有限，不显示 */
+  .badge { display: none; }
 
   /* 模态卡片全屏化 */
   .temp-box { width: 94%; height: 84%; }

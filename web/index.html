@@ -4,12 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>田螺姑娘</title>
-<link rel="stylesheet" href="css/style.css?v=20261124a">
+<link rel="stylesheet" href="css/style.css?v=20261125b">
 </head>
 <body>
-  <div id="status" class="badge badge-off">未连接</div>
-
-  <!-- 待机时钟 -->
+<!-- 待机时钟 -->
   <div id="view-clock" class="view">
     <div id="clock-time">--:--</div>
     <div id="clock-date">----年--月--日 星期-</div>
@@ -44,9 +42,10 @@
     </div>
   </div>
 
-  <!-- 左侧页签栏（点按切换常驻槽） -->
+  <!-- 左侧页签栏（点按切换常驻槽）；连接徽标固定在栏底，不再悬浮遮挡内容 -->
   <div id="slot-bar" class="hidden">
     <div id="slot-list"></div>
+    <div id="status" class="badge badge-off">未连接</div>
   </div>
 
   <!-- 播报字幕条 -->
